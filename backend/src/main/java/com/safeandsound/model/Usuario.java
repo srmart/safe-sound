@@ -2,6 +2,7 @@ package com.safeandsound.model;
 
 import jakarta.persistence.*;
 
+
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
@@ -13,6 +14,9 @@ public class Usuario {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = false, unique = true)
+    private String username;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -23,6 +27,10 @@ public class Usuario {
     public void setEmail(String email) {
         this.email = email;
     }
+
+    public String getUsername(){return username;}
+
+    public void setUsername(String username){this.username = username;}
 
     public String getPasswordHash() {
         return passwordHash;
