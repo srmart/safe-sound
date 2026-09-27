@@ -22,13 +22,28 @@ public class AutorizacionService {
             Operacion operacion
     ) {
 
-        ProyectoMiembro miembro = proyectoMiembroRepository
-                .findByProyectoIdAndUsuarioId(proyectoId, usuarioId)
-                .orElseThrow(() ->
-                        new AccessDeniedException(
-                                "El usuario no pertenece al proyecto"
-                        )
-                );
+        ProyectoMiembro miembro;
+
+        try {
+            miembro = proyectoMiembroRepository
+                    .findByProyectoIdAndUsuarioId(proyectoId, usuarioId)
+                    .orElseThrow(() ->
+                            new AccessDeniedException(
+                                    "El usuario no pertenece al proyecto"
+                            )
+                    );
+
+        } catch (AccessDeniedException e) {
+            // Si el acceso ya fue denegado, mantenemos la denegación.
+            throw e;
+
+        } catch (Exception e) {
+            // RS9: ante cualquier error durante la comprobación
+            // de autorización, se deniega el acceso.
+            throw new AccessDeniedException(
+                    "No se pudo verificar la autorización del usuario"
+            );
+        }
 
         Rol rol = miembro.getRol();
 
@@ -40,6 +55,12 @@ public class AutorizacionService {
     }
 
     private boolean tienePermiso(Rol rol, Operacion operacion) {
+
+        // RS6: si falta información necesaria para autorizar,
+        // el acceso se deniega por defecto.
+        if (rol == null || operacion == null) {
+            return false;
+        }
 
         return switch (operacion) {
 
@@ -61,6 +82,8 @@ public class AutorizacionService {
 
             case MODIFICAR_ROLES ->
                     rol == Rol.OWNER;
+
+            default -> false;
         };
     }
 }
