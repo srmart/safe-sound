@@ -51,6 +51,16 @@
   cursor: not-allowed;
 }
 
+.auth-form button + button {
+  margin-top: 0.75rem;
+}
+
+.auth-switch {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .field-error {
   color: #d33;
   font-size: 0.85rem;

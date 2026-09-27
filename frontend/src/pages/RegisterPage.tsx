@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
+import { Link } from 'react-router-dom'
 import {
   registrar,
   RegistroConflictError,
@@ -44,7 +45,7 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     setFormError(null)
     setSuccess(false)
@@ -125,6 +126,10 @@ export default function RegisterPage() {
         <button type="submit" disabled={submitting}>
           {submitting ? 'Registrando...' : 'Registrarme'}
         </button>
+
+        <p className="auth-switch">
+          ¿Ya tenés cuenta? <Link to="/login">Iniciá sesión</Link>
+        </p>
       </form>
     </main>
   )
