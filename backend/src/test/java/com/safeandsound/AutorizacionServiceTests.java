@@ -176,6 +176,61 @@ class AutorizacionServiceTests {
                 )
         );
     }
+
+    // =========================
+    // RS31
+    // =========================
+
+    @Test
+    void ownerDeUnProyectoNoTienePermisosSobreOtroProyecto() {
+
+        when(proyectoMiembroRepository
+                .findByProyectoIdAndUsuarioId(2L, 1L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> autorizacionService.verificarPermiso(
+                        1L,
+                        2L,
+                        Operacion.MODIFICAR_PROYECTO
+                )
+        );
+    }
+
+    @Test
+    void collaboratorDeUnProyectoNoTienePermisosSobreOtroProyecto() {
+
+        when(proyectoMiembroRepository
+                .findByProyectoIdAndUsuarioId(2L, 2L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> autorizacionService.verificarPermiso(
+                        2L,
+                        2L,
+                        Operacion.VER_PROYECTO
+                )
+        );
+    }
+
+    @Test
+    void viewerDeUnProyectoNoTienePermisosSobreOtroProyecto() {
+
+        when(proyectoMiembroRepository
+                .findByProyectoIdAndUsuarioId(2L, 3L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> autorizacionService.verificarPermiso(
+                        3L,
+                        2L,
+                        Operacion.VER_PROYECTO
+                )
+        );
+    }
 }
 
 
