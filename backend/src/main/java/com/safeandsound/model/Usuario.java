@@ -1,7 +1,7 @@
 package com.safeandsound.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
 
 @Entity
 @Table(name = "usuarios")
@@ -18,6 +18,7 @@ public class Usuario {
     private String username;
 
     @Column(name = "password_hash", nullable = false)
+    @JsonIgnore
     private String passwordHash;
 
     public String getEmail() {
@@ -28,9 +29,13 @@ public class Usuario {
         this.email = email;
     }
 
-    public String getUsername(){return username;}
+    public String getUsername() {
+        return username;
+    }
 
-    public void setUsername(String username){this.username = username;}
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
     public String getPasswordHash() {
         return passwordHash;
