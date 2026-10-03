@@ -8,6 +8,7 @@ import com.safeandsound.repository.ProyectoMiembroRepository;
 import com.safeandsound.repository.ProyectoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 public class ProyectoService {
@@ -124,5 +125,12 @@ public class ProyectoService {
         miembro.setRol(nuevoRol);
 
         proyectoMiembroRepository.save(miembro);
+    }
+
+    public List<Proyecto> obtenerProyectosDelUsuario(Long usuarioId) {
+        return proyectoMiembroRepository.findByUsuarioId(usuarioId)
+                .stream()
+                .map(ProyectoMiembro::getProyecto)
+                .toList();
     }
 }

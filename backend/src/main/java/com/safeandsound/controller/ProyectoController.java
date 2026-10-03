@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/proyectos")
@@ -149,5 +150,14 @@ public class ProyectoController {
         );
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Proyecto>> listarProyectos(Authentication authentication) {
+        Long usuarioId = (Long) authentication.getPrincipal();
+
+        return ResponseEntity.ok(
+                proyectoService.obtenerProyectosDelUsuario(usuarioId)
+        );
     }
 }
