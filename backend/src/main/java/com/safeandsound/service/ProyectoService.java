@@ -133,4 +133,22 @@ public class ProyectoService {
                 .map(ProyectoMiembro::getProyecto)
                 .toList();
     }
+
+    // R5 - Listado de proyectos con búsqueda y filtros
+    @Transactional(readOnly = true)
+    public List<ProyectoMiembro> listarProyectos(
+            Long usuarioId,
+            String nombre,
+            Boolean activo
+    ) {
+        if (nombre == null) {
+            nombre = "";
+        }
+
+        return proyectoMiembroRepository.listarProyectos(
+                usuarioId,
+                nombre,
+                activo
+        );
+    }
 }

@@ -7,7 +7,7 @@ interface UploadFileModalProps {
   onUpload: (fileName: string, fileSize: string) => void;
 }
 
-export const UploadFileModal: React.FC<UploadFileModalProps> = ({ projectId, onClose, onUpload }) => {
+export const UploadFileModal: React.FC<UploadFileModalProps> = ({ onClose, onUpload }) => {
   const [file, setFile] = useState<File | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {

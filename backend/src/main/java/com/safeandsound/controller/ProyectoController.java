@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.safeandsound.dto.ProyectoListadoDTO;
 
 @RestController
 @RequestMapping("/proyectos")
@@ -152,12 +153,27 @@ public class ProyectoController {
         return ResponseEntity.noContent().build();
     }
 
+    // R5 - Listado de proyectos con búsqueda y filtros
     @GetMapping
-    public ResponseEntity<List<Proyecto>> listarProyectos(Authentication authentication) {
+    public ResponseEntity<List<ProyectoListadoDTO>> listarProyectos(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) Boolean activo,
+            Authentication authentication
+    ) {
         Long usuarioId = (Long) authentication.getPrincipal();
 
-        return ResponseEntity.ok(
-                proyectoService.obtenerProyectosDelUsuario(usuarioId)
-        );
+        List<ProyectoListadoDTO> proyectos = proyectoService
+                .listarProyectos(usuarioId, nombre, activo)
+                .stream()
+                .map(miembro -> new ProyectoListadoDTO(
+                        miembro.getProyecto().getId(),
+                        miembro.getProyecto().getNombre(),
+                        miembro.getProyecto().getDescripcion(),
+                        miembro.getProyecto().isActivo(),
+                        miembro.getRol()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(proyectos);
     }
 }
