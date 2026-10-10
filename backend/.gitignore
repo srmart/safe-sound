@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Java heap dumps y archivos de profiling
+*.hprof
+*.hprof.hwcache/
+
