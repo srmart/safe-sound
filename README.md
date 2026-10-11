@@ -432,11 +432,9 @@ $env:NVD_API_KEY="YOUR_NVD_API_KEY"
 
 ## Gestión de archivos
 
-**WIP**
+La interfaz permite consultar y descargar los archivos de un proyecto. Los roles `OWNER` y `COLLABORATOR` también pueden cargar y eliminar archivos, mientras que `VIEWER` dispone únicamente de consulta y descarga.
 
-La gestión de archivos se encuentra actualmente en desarrollo.
-
-Esta sección se completará a medida que se implemente la funcionalidad correspondiente en el backend y se integre con el frontend.
+La persistencia y las operaciones remotas de archivos requieren los endpoints correspondientes del backend. Mientras se desarrolla esa integración, el frontend conserva las modificaciones de archivos durante la sesión del navegador.
 
 ---
 
