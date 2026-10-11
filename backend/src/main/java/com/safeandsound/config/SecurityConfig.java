@@ -8,15 +8,21 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import com.safeandsound.security.JwtAuthenticationFilter;
+import com.safeandsound.security.RegistroIntentoAccesoFilter;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RegistroIntentoAccesoFilter registroIntentoAccesoFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            RegistroIntentoAccesoFilter registroIntentoAccesoFilter
+    ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.registroIntentoAccesoFilter = registroIntentoAccesoFilter;
     }
 
     @Bean
@@ -51,6 +57,10 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
+                )
+                .addFilterAfter(
+                        registroIntentoAccesoFilter,
+                        JwtAuthenticationFilter.class
                 );
 
         return http.build();
