@@ -104,11 +104,23 @@ La base de datos utiliza el puerto `5433` en el equipo local para evitar conflic
 
 #### Actualizar una base existente para RF7
 
-Si la base ya fue creada antes de incorporar el perfil de usuario y sus preferencias, aplicar la migración sin eliminar datos:
+Una base creada desde cero recibe los cambios de RF7 automáticamente: `database/init.sql` se ejecuta cuando Docker inicializa un volumen nuevo.
+
+Si ya existía un volumen de PostgreSQL antes de incorporar el perfil de usuario y sus preferencias, ejecutar una vez la migración. No elimina datos:
+
+**macOS, Linux o Git Bash:**
 
 ```bash
 docker compose exec -T postgres psql -U safeandsound -d safe_and_sound < database/migrate-rf7.sql
 ```
+
+**Windows PowerShell:**
+
+```powershell
+Get-Content database/migrate-rf7.sql | docker compose exec -T postgres psql -U safeandsound -d safe_and_sound
+```
+
+La migración agrega `foto_perfil`, `notificaciones_habilitadas` y `modo_oscuro` a la tabla `usuarios`. Es segura de ejecutar más de una vez porque usa `ADD COLUMN IF NOT EXISTS`.
 
 ### 3. Ejecutar el backend
 
