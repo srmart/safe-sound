@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+        Falso positivo: CVE-2018-1258 corresponde a una vulnerabilidad
+        de Spring Framework 5.0.5 combinado con Spring Security.
+
+        Safe & Sound utiliza Spring Framework 7.0.9 y
+        Spring Security 7.1.1.
+        ]]></notes>
+        <cpe>cpe:/a:pivotal_software:spring_security:7.1.1</cpe>
+        <cve>CVE-2018-1258</cve>
+    </suppress>
+</suppressions>
