@@ -1,84 +1,28 @@
 .auth-page {
+  position: relative;
+  display: grid;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
+  place-items: center;
+  overflow: hidden;
+  padding: 1.5rem;
+  background: radial-gradient(circle at 15% 20%, rgba(168, 85, 247, 0.37), transparent 31rem), radial-gradient(circle at 86% 84%, rgba(45, 212, 191, 0.22), transparent 28rem), #100d1c;
 }
-
-.auth-form {
-  width: 100%;
-  max-width: 360px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.auth-form h1 {
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-}
-
-.auth-form label {
-  font-weight: 600;
-  margin-top: 0.75rem;
-}
-
-.auth-form input {
-  padding: 0.5rem 0.6rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-.auth-form input[aria-invalid='true'] {
-  border-color: #d33;
-}
-
-.auth-form button {
-  margin-top: 1.5rem;
-  padding: 0.6rem;
-  font-size: 1rem;
-  border-radius: 6px;
-  border: none;
-  background-color: #4f46e5;
-  color: white;
-  cursor: pointer;
-}
-
-.auth-form button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.auth-form button + button {
-  margin-top: 0.75rem;
-}
-
-.auth-switch {
-  margin-top: 1rem;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.field-error {
-  color: #d33;
-  font-size: 0.85rem;
-}
-
-.alert {
-  padding: 0.6rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.alert-success {
-  background-color: #e6f6ec;
-  color: #1a7f3c;
-}
-
-.alert-error {
-  background-color: #fdeaea;
-  color: #b42318;
-}
+.auth-page::before { position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px); background-size: 2rem 2rem; content: ''; mask-image: linear-gradient(to bottom, black, transparent 82%); }
+.auth-form { position: relative; z-index: 1; display: flex; width: min(100%, 27rem); flex-direction: column; padding: 2.25rem; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 1.25rem; background: rgba(29, 24, 47, 0.82); box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.35); backdrop-filter: blur(18px); }
+.auth-form::before { margin-bottom: 1.1rem; color: #d8b4fe; content: 'SAFE & SOUND'; font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em; }
+.auth-form h1 { margin: 0 0 1.5rem; color: #fff; font-size: clamp(1.8rem, 5vw, 2.3rem); letter-spacing: -0.05em; line-height: 1; }
+.auth-form label { margin: 0.8rem 0 0.38rem; color: #e9e4f5; font-size: 0.88rem; font-weight: 600; }
+.auth-form input { width: 100%; min-height: 2.85rem; padding: 0.7rem 0.8rem; border: 1px solid #4c465e; border-radius: 0.55rem; background: rgba(10, 7, 19, 0.55); color: #fff; }
+.auth-form input:hover { border-color: #786e91; }
+.auth-form input:focus { border-color: #c084fc; outline: none; box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.18); }
+.auth-form input[aria-invalid='true'] { border-color: #fb7185; }
+.auth-form button { min-height: 2.9rem; margin-top: 1.5rem; border: 0; border-radius: 0.6rem; background: linear-gradient(120deg, #a855f7, #7c3aed); color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 0.7rem 1.4rem rgba(124, 58, 237, 0.25); }
+.auth-form button:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.auth-form button:disabled { cursor: wait; opacity: 0.65; }
+.auth-switch { margin: 1.25rem 0 0; color: #c0b8d0; font-size: 0.9rem; text-align: center; }
+.auth-switch a { color: #e9d5ff; font-weight: 600; }
+.field-error { margin-top: 0.35rem; color: #fda4af; font-size: 0.78rem; }
+.alert { margin: 0 0 0.35rem; padding: 0.7rem 0.85rem; border-radius: 0.55rem; font-size: 0.86rem; }
+.alert-success { border: 1px solid rgba(52, 211, 153, 0.32); background: rgba(6, 78, 59, 0.42); color: #a7f3d0; }
+.alert-error { border: 1px solid rgba(251, 113, 133, 0.32); background: rgba(136, 19, 55, 0.3); color: #fecdd3; }
+@media (max-width: 480px) { .auth-page { padding: 1rem; } .auth-form { padding: 1.65rem; } }

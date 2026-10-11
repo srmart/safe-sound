@@ -1,56 +1,73 @@
 // src/components/Files/UploadFileModal.tsx
-import React, { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react'
+import type { FormEvent } from 'react'
+import './files.css'
 
 interface UploadFileModalProps {
-  projectId: string;
-  onClose: () => void;
-  onUpload: (fileName: string, fileSize: string) => void;
+  onClose: () => void
+  onUpload: (file: File) => void
 }
 
-export const UploadFileModal: React.FC<UploadFileModalProps> = ({ onClose, onUpload }) => {
-  const [file, setFile] = useState<File | null>(null);
+export function UploadFileModal({ onClose, onUpload }: UploadFileModalProps) {
+  const [file, setFile] = useState<File | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const inputId = useId()
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (file) {
-      // Simular tamaño en MB
-      const sizeInMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-      onUpload(file.name, sizeInMB);
-      onClose();
+  useEffect(() => {
+    inputRef.current?.focus()
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
     }
-  };
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [onClose])
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!file) {
+      setError('Seleccioná un archivo para continuar.')
+      return
+    }
+    onUpload(file)
+    onClose()
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">Subir Archivo al Proyecto</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="file-modal-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.currentTarget === event.target) onClose()
+    }}>
+      <section className="file-modal" role="dialog" aria-modal="true" aria-labelledby="upload-file-title">
+        <div className="file-modal__heading">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar Archivo</label>
-            <input
-              type="file"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
+            <p className="file-modal__eyebrow">Proyecto</p>
+            <h2 id="upload-file-title">Subir archivo</h2>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 transition"
-            >
-              Subir Archivo
-            </button>
+          <button className="icon-button" type="button" onClick={onClose} aria-label="Cerrar">×</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <label className="file-picker" htmlFor={inputId}>
+            <span className="file-picker__icon" aria-hidden="true">↑</span>
+            <span className="file-picker__title">{file ? file.name : 'Elegí un archivo'}</span>
+            <span className="file-picker__hint">{file ? formatFileSize(file.size) : 'Se conservará el nombre original'}</span>
+          </label>
+          <input ref={inputRef} id={inputId} className="file-picker__input" type="file" onChange={(event) => {
+            setFile(event.target.files?.[0] ?? null)
+            setError(null)
+          }} />
+          {error && <p className="file-form-error" role="alert">{error}</p>}
+          <div className="file-modal__actions">
+            <button className="button button--secondary" type="button" onClick={onClose}>Cancelar</button>
+            <button className="button button--primary" type="submit">Subir archivo</button>
           </div>
         </form>
-      </div>
+      </section>
     </div>
-  );
-};
+  )
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
