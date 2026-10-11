@@ -102,6 +102,14 @@ El flag `-v` elimina el volumen con los datos de PostgreSQL.
 
 La base de datos utiliza el puerto `5433` en el equipo local para evitar conflictos con instalaciones de PostgreSQL que puedan estar utilizando el puerto `5432`.
 
+#### Actualizar una base existente para RF7
+
+Si la base ya fue creada antes de incorporar el perfil de usuario y sus preferencias, aplicar la migración sin eliminar datos:
+
+```bash
+docker compose exec -T postgres psql -U safeandsound -d safe_and_sound < database/migrate-rf7.sql
+```
+
 ### 3. Ejecutar el backend
 
 El backend necesita recibir las variables de `.env` en el proceso que lo ejecuta.
@@ -208,6 +216,12 @@ Registro → Inicio de sesión → Crear proyecto → Abrir proyecto → Subir/d
 ```
 
 Si el navegador muestra `401 Unauthorized` al cargar proyectos, verificar que el backend haya sido reiniciado con las variables indicadas arriba e iniciar sesión nuevamente.
+
+### 4. Configurar perfil y preferencias
+
+Desde **Perfil** en la barra superior se puede actualizar el nombre de usuario y cargar una foto de perfil PNG, JPEG o WEBP de hasta 1 MB. También se pueden activar o desactivar las notificaciones dentro de la aplicación y el modo oscuro.
+
+Las preferencias se guardan automáticamente. La foto y el nombre de usuario requieren seleccionar **Guardar perfil**.
 
 ---
 

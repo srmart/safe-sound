@@ -37,7 +37,10 @@ export function ProjectDetail() {
     <main className="workspace">
       <header className="workspace-bar">
         <button className="brand" type="button" onClick={() => navigate('/projects')}><span className="brand__mark" aria-hidden="true">⌁</span><span>Safe &amp; Sound</span></button>
-        <span className="workspace-bar__status"><i /> Proyecto privado</span>
+        <div className="workspace-bar__actions">
+          <button className="workspace-bar__profile" type="button" onClick={() => navigate('/profile')}>Perfil</button>
+          <span className="workspace-bar__status"><i /> Proyecto privado</span>
+        </div>
       </header>
       <section className="project-detail">
         <button className="back-link" type="button" onClick={() => navigate('/projects')}>← Volver a proyectos</button>

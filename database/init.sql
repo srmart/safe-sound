@@ -5,6 +5,11 @@ CREATE TABLE IF NOT EXISTS usuarios (
     password_hash VARCHAR(255) NOT NULL
     );
 
+ALTER TABLE usuarios
+    ADD COLUMN IF NOT EXISTS foto_perfil TEXT,
+    ADD COLUMN IF NOT EXISTS notificaciones_habilitadas BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN IF NOT EXISTS modo_oscuro BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE TABLE IF NOT EXISTS refresh_tokens (
                                               id BIGSERIAL PRIMARY KEY,
                                               usuario_id BIGINT NOT NULL,

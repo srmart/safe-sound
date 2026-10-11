@@ -15,3 +15,10 @@ body { min-width: 320px; min-height: 100vh; margin: 0; }
 button, input, textarea, select { font: inherit; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid #d8b4fe; outline-offset: 3px; }
 #root { min-height: 100vh; }
+:root[data-theme='light'] { color: #271f37; background: #f8f6fc; }
+:root[data-theme='light'] .workspace { background: radial-gradient(circle at 75% -5%, rgba(192, 132, 252, .32), transparent 28rem), #f8f6fc; color: #271f37; }
+:root[data-theme='light'] .workspace .brand, :root[data-theme='light'] .workspace .projects-hero h1, :root[data-theme='light'] .workspace .project-detail h1, :root[data-theme='light'] .workspace .project-card h2, :root[data-theme='light'] .workspace .project-empty h2, :root[data-theme='light'] .workspace .project-not-found h1 { color: #271f37; }
+:root[data-theme='light'] .workspace .workspace-bar__status, :root[data-theme='light'] .workspace .projects-hero__copy, :root[data-theme='light'] .workspace .project-card p, :root[data-theme='light'] .workspace .project-detail__content > p:not(.eyebrow) { color: #6a6079; }
+:root[data-theme='light'] .workspace .project-toolbar, :root[data-theme='light'] .workspace .project-card, :root[data-theme='light'] .workspace .project-detail__hero { border-color: rgba(66, 47, 93, .14); background: rgba(255,255,255,.83); }
+:root[data-theme='light'] .workspace .search-field, :root[data-theme='light'] .workspace .search-field input, :root[data-theme='light'] .workspace .select-field select, :root[data-theme='light'] .workspace .project-form input, :root[data-theme='light'] .workspace .project-form textarea { border-color: #d8cfe5; background: #fff; color: #271f37; }
+:root[data-theme='light'] .workspace .quiet-action, :root[data-theme='light'] .workspace .workspace-bar__profile { border-color: #d8cfe5; background: rgba(255,255,255,.8); color: #493d5e; }

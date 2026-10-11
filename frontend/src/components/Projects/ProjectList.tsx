@@ -84,7 +84,10 @@ export function ProjectList() {
           <span className="brand__mark" aria-hidden="true">⌁</span>
           <span>Safe &amp; Sound</span>
         </button>
-        <span className="workspace-bar__status"><i /> Sesión protegida</span>
+        <div className="workspace-bar__actions">
+          <button className="workspace-bar__profile" type="button" onClick={() => navigate('/profile')}>Perfil</button>
+          <span className="workspace-bar__status"><i /> Sesión protegida</span>
+        </div>
       </header>
 
       <section className="projects-page">
