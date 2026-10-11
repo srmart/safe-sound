@@ -2,7 +2,9 @@
 // frontend/src/api/proyectos.ts
 import { getAccessToken } from './tokenStorage';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+export class SesionExpiradaError extends Error {}
 
 // Función auxiliar para construir los headers con el JWT (RS7)
 const getHeaders = () => {
@@ -17,9 +19,7 @@ const getHeaders = () => {
 // Función auxiliar para manejo seguro de errores (RS9)
 const handleApiError = async (response: Response, action: string) => {
   if (response.status === 401) {
-    throw new Error(
-        'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
-    );
+    throw new SesionExpiradaError('Tu sesión expiró. Iniciá sesión nuevamente.');
   }
 
   if (response.status === 403) {

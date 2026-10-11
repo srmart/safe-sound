@@ -1,67 +1,33 @@
-// src/components/Projects/EditProjectModal.tsx
-import React, { useState } from 'react';
-import type { Project } from '../../types';
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import type { Project } from '../../types'
+import './projects.css'
 
 interface EditProjectModalProps {
-  project: Project;
-  onClose: () => void;
-  onSave: (id: string, name: string, description: string) => void;
+  project: Project
+  onClose: () => void
+  onSave: (id: string, name: string, description: string) => void
 }
 
-export const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose, onSave }) => {
-  const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description);
+export function EditProjectModal({ project, onClose, onSave }: EditProjectModalProps) {
+  const [name, setName] = useState(project.name)
+  const [description, setDescription] = useState(project.description)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (name.trim() && description.trim()) {
-      onSave(project.id, name, description);
-      onClose();
-    }
-  };
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (name.trim() && description.trim()) onSave(project.id, name.trim(), description.trim())
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">Modificar Proyecto</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Proyecto</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-              rows={3}
-              required
-            />
-          </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-white bg-yellow-500 rounded hover:bg-yellow-600 transition"
-            >
-              Guardar Cambios
-            </button>
-          </div>
+    <div className="project-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) onClose() }}>
+      <section className="project-modal" role="dialog" aria-modal="true" aria-labelledby="edit-project-title">
+        <div className="project-modal__heading"><div><p className="eyebrow">Proyecto</p><h2 id="edit-project-title">Editar detalles</h2></div><button className="modal-close" type="button" onClick={onClose} aria-label="Cerrar">×</button></div>
+        <form className="project-form" onSubmit={handleSubmit}>
+          <label htmlFor="edit-project-name">Nombre del proyecto<input id="edit-project-name" value={name} onChange={(event) => setName(event.target.value)} required autoFocus /></label>
+          <label htmlFor="edit-project-description">Descripción<textarea id="edit-project-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={4} required /></label>
+          <div className="project-modal__actions"><button className="quiet-action" type="button" onClick={onClose}>Cancelar</button><button className="primary-action" type="submit">Guardar cambios</button></div>
         </form>
-      </div>
+      </section>
     </div>
-  );
-};
+  )
+}

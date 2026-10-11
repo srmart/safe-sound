@@ -10,6 +10,10 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/proyectos': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
 })
