@@ -57,6 +57,19 @@ También se pueden consultar los logs de PostgreSQL con:
 docker compose logs postgres
 ```
 
+#### Problemas de credenciales
+
+PostgreSQL solo aplica `POSTGRES_USER` y `POSTGRES_PASSWORD` la primera vez que se crea el contenedor, cuando el volumen de datos está vacío. Si se cambian esas variables en `.env` después de levantar la base, puede aparecer el error `password authentication failed` porque el volumen conserva las credenciales iniciales.
+
+Si no es necesario conservar los datos locales, se puede recrear la base con las credenciales actuales:
+
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+El flag `-v` elimina el volumen con los datos de PostgreSQL.
+
 La base de datos utiliza el puerto `5433` en el equipo local para evitar conflictos con instalaciones de PostgreSQL que puedan estar utilizando el puerto `5432`.
 
 ### 2. Variables de entorno
