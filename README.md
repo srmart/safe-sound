@@ -1,6 +1,6 @@
 # Safe & Sound
 
-Safe & Sound es una aplicación web orientada a artistas y productores, pensada para facilitar la colaboración en proyectos musicales. La aplicación permite gestionar proyectos, usuarios, roles y, a futuro, los archivos y versiones asociados a cada proyecto.
+Safe & Sound es una aplicación web orientada a artistas y productores, pensada para facilitar la colaboración en proyectos musicales. Permite registrarse, iniciar sesión, crear y administrar proyectos, y consultar una biblioteca de archivos por proyecto.
 
 El proyecto fue desarrollado para la materia **Desarrollo Seguro** de la **Facultad de Ingeniería de la Universidad de Montevideo**, teniendo en cuenta tanto las funcionalidades de la aplicación como aspectos de autenticación, autorización y control de acceso.
 
@@ -35,7 +35,37 @@ Se recomienda utilizar una versión LTS de Node.js compatible con las dependenci
 
 ## Configuración y Ejecución
 
-### 1. Base de datos
+### 1. Crear el archivo `.env`
+
+En la raíz del repositorio, crear un archivo llamado `.env` con las siguientes variables:
+
+```env
+POSTGRES_DB=safe_and_sound
+POSTGRES_USER=safeandsound
+POSTGRES_PASSWORD=change_me
+POSTGRES_PORT=5433
+
+DB_APP_USER=safeandsound
+DB_APP_PASSWORD=change_me
+
+JWT_SECRET=REEMPLAZAR_POR_UN_SECRETO_BASE64
+```
+
+`JWT_SECRET` debe ser una cadena Base64 válida. No debe usarse literalmente el texto `REEMPLAZAR_POR_UN_SECRETO_BASE64`.
+
+Para generar una clave válida:
+
+```powershell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+```
+
+```bash
+openssl rand -base64 32
+```
+
+El archivo `.env` está excluido de Git y debe conservarse localmente.
+
+### 2. Levantar la base de datos
 
 La aplicación utiliza PostgreSQL como base de datos y se levanta mediante Docker Compose.
 
@@ -72,27 +102,11 @@ El flag `-v` elimina el volumen con los datos de PostgreSQL.
 
 La base de datos utiliza el puerto `5433` en el equipo local para evitar conflictos con instalaciones de PostgreSQL que puedan estar utilizando el puerto `5432`.
 
-### 2. Variables de entorno
+### 3. Ejecutar el backend
 
-El proyecto utiliza variables de entorno para configurar la conexión a la base de datos y la autenticación.
+El backend necesita recibir las variables de `.env` en el proceso que lo ejecuta.
 
-Se debe crear un archivo `.env` en la raíz del proyecto:
-
-```env
-POSTGRES_DB=safe_and_sound
-POSTGRES_USER=safeandsound
-POSTGRES_PASSWORD=change_me
-POSTGRES_PORT=5433
-
-DB_APP_USER=safeandsound
-DB_APP_PASSWORD=change_me
-
-JWT_SECRET=YOUR_BASE64_SECRET
-```
-
-El archivo `.env` contiene información que no debería quedar expuesta en el repositorio, por lo que debe mantenerse fuera del control de versiones.
-
-Si el backend se ejecuta directamente desde PowerShell, las variables también deben estar disponibles en el entorno. Por ejemplo:
+#### Windows PowerShell
 
 ```powershell
 $env:POSTGRES_PORT="5433"
@@ -101,15 +115,20 @@ $env:POSTGRES_USER="safeandsound"
 $env:POSTGRES_PASSWORD="change_me"
 $env:DB_APP_USER="safeandsound"
 $env:DB_APP_PASSWORD="change_me"
-$env:JWT_SECRET="YOUR_BASE64_SECRET"
+$env:JWT_SECRET="<tu clave Base64 válida>"
+
+cd backend
+.\mvnw.cmd spring-boot:run
 ```
 
-### 3. Ejecutar el Backend
+#### macOS o Linux
 
-Desde la carpeta `backend/`:
-
-```powershell
-.\mvnw.cmd spring-boot:run
+```bash
+cd backend
+set -a
+source ../.env
+set +a
+./mvnw spring-boot:run
 ```
 
 El backend queda disponible en:
@@ -118,7 +137,9 @@ El backend queda disponible en:
 http://localhost:8080
 ```
 
-### 4. Ejecutar el Frontend
+El arranque correcto termina con un mensaje similar a `Tomcat started on port 8080`. Si se actualizó el código del backend, detener la instancia anterior con `Ctrl + C` y volver a iniciarla para evitar ejecutar clases antiguas.
+
+### 4. Ejecutar el frontend
 
 Desde la carpeta `frontend/`:
 
@@ -132,6 +153,61 @@ El frontend se ejecuta mediante Vite y normalmente queda disponible en:
 ```text
 http://localhost:5173
 ```
+
+Abrir esa dirección en el navegador. Las rutas del frontend son en inglés (`/login`, `/register`, `/projects`); la API del backend usa, entre otros, el endpoint `/proyectos`.
+
+---
+
+## Uso de la aplicación
+
+### 1. Crear una cuenta e iniciar sesión
+
+1. Abrir `http://localhost:5173`.
+2. Si no existe una cuenta, seleccionar **Registrate**, completar email, nombre de usuario y una contraseña de al menos ocho caracteres.
+3. Volver a **Iniciar sesión** e ingresar con las mismas credenciales.
+4. Al autenticarse, la aplicación redirige a **Mis proyectos**. El token de acceso se usa automáticamente para las operaciones protegidas.
+
+Si la sesión vence o el token no es válido, la aplicación borra la sesión local y dirige nuevamente a `/login`.
+
+### 2. Gestionar proyectos
+
+En **Mis proyectos** se puede:
+
+* Crear un proyecto con **Nuevo proyecto**.
+* Buscar proyectos por nombre.
+* Filtrar por estado: todos, activos o archivados.
+* Abrir un proyecto al seleccionar su tarjeta.
+* Archivar un proyecto cuando el rol es **Propietario**.
+
+Cada proyecto muestra el estado y el rol de la persona autenticada:
+
+| Rol | Acciones disponibles en la interfaz |
+| --- | --- |
+| Propietario | Crear y archivar proyectos; acceder a los controles de edición; subir, descargar y eliminar archivos. |
+| Colaborador | Subir, descargar y eliminar archivos. |
+| Solo lectura | Visualizar y descargar archivos. |
+
+Las operaciones de proyecto que usan la API se autorizan en el backend con el JWT y la membresía del proyecto.
+
+### 3. Gestionar archivos de un proyecto
+
+1. Abrir la tarjeta de un proyecto.
+2. Ir a la sección **Archivos**.
+3. Con rol Propietario o Colaborador, seleccionar **Subir archivo**, elegir un archivo y confirmar.
+4. Usar **Descargar** para obtener un archivo de la lista.
+5. Con permisos de modificación, usar **Eliminar** y confirmar la acción.
+
+La interfaz de R6 aplica las acciones según el rol. En esta entrega, la biblioteca de archivos es una implementación de frontend: los archivos de muestra y los cambios de carga o eliminación se mantienen mientras la pantalla está abierta; el almacenamiento permanente y los endpoints de archivos requieren la integración del backend. Del mismo modo, los controles de edición dentro del detalle actualizan la vista abierta.
+
+### Comprobación rápida
+
+Con los tres servicios levantados, este flujo debe funcionar:
+
+```text
+Registro → Inicio de sesión → Crear proyecto → Abrir proyecto → Subir/descargar/eliminar archivo
+```
+
+Si el navegador muestra `401 Unauthorized` al cargar proyectos, verificar que el backend haya sido reiniciado con las variables indicadas arriba e iniciar sesión nuevamente.
 
 ---
 
