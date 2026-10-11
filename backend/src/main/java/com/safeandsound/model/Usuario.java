@@ -21,6 +21,15 @@ public class Usuario {
     @JsonIgnore
     private String passwordHash;
 
+    @Column(name = "foto_perfil", columnDefinition = "TEXT")
+    private String fotoPerfil;
+
+    @Column(name = "notificaciones_habilitadas", nullable = false)
+    private boolean notificacionesHabilitadas = true;
+
+    @Column(name = "modo_oscuro", nullable = false)
+    private boolean modoOscuro = false;
+
     public String getEmail() {
         return email;
     }
@@ -47,5 +56,29 @@ public class Usuario {
 
     public Long getId() {
         return id;
+    }
+
+    public String getFotoPerfil() {
+        return fotoPerfil;
+    }
+
+    public void setFotoPerfil(String fotoPerfil) {
+        this.fotoPerfil = fotoPerfil;
+    }
+
+    public boolean isNotificacionesHabilitadas() {
+        return notificacionesHabilitadas;
+    }
+
+    public void setNotificacionesHabilitadas(boolean notificacionesHabilitadas) {
+        this.notificacionesHabilitadas = notificacionesHabilitadas;
+    }
+
+    public boolean isModoOscuro() {
+        return modoOscuro;
+    }
+
+    public void setModoOscuro(boolean modoOscuro) {
+        this.modoOscuro = modoOscuro;
     }
 }

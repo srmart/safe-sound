@@ -102,6 +102,26 @@ El flag `-v` elimina el volumen con los datos de PostgreSQL.
 
 La base de datos utiliza el puerto `5433` en el equipo local para evitar conflictos con instalaciones de PostgreSQL que puedan estar utilizando el puerto `5432`.
 
+#### Actualizar una base existente para RF7
+
+Una base creada desde cero recibe los cambios de RF7 automáticamente: `database/init.sql` se ejecuta cuando Docker inicializa un volumen nuevo.
+
+Si ya existía un volumen de PostgreSQL antes de incorporar el perfil de usuario y sus preferencias, ejecutar una vez la migración. No elimina datos:
+
+**macOS, Linux o Git Bash:**
+
+```bash
+docker compose exec -T postgres psql -U safeandsound -d safe_and_sound < database/migrate-rf7.sql
+```
+
+**Windows PowerShell:**
+
+```powershell
+Get-Content database/migrate-rf7.sql | docker compose exec -T postgres psql -U safeandsound -d safe_and_sound
+```
+
+La migración agrega `foto_perfil`, `notificaciones_habilitadas` y `modo_oscuro` a la tabla `usuarios`. Es segura de ejecutar más de una vez porque usa `ADD COLUMN IF NOT EXISTS`.
+
 ### 3. Ejecutar el backend
 
 El backend necesita recibir las variables de `.env` en el proceso que lo ejecuta.
@@ -208,6 +228,12 @@ Registro → Inicio de sesión → Crear proyecto → Abrir proyecto → Subir/d
 ```
 
 Si el navegador muestra `401 Unauthorized` al cargar proyectos, verificar que el backend haya sido reiniciado con las variables indicadas arriba e iniciar sesión nuevamente.
+
+### 4. Configurar perfil y preferencias
+
+Desde **Perfil** en la barra superior se puede actualizar el nombre de usuario y cargar una foto de perfil PNG, JPEG o WEBP de hasta 1 MB. También se pueden activar o desactivar las notificaciones dentro de la aplicación y el modo oscuro.
+
+Las preferencias se guardan automáticamente. La foto y el nombre de usuario requieren seleccionar **Guardar perfil**.
 
 ---
 

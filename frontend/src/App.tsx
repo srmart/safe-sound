@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage'
 import RequireAuth from './RequireAuth'
 import { ProjectList } from './components/Projects/ProjectList'
 import { ProjectDetail } from './components/Projects/ProjectDetail'
+import ProfilePage from './pages/ProfilePage'
 import './App.css'
 
 function App() {
@@ -42,6 +43,14 @@ function App() {
           element={
             <RequireAuth>
               <HomePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <ProfilePage />
             </RequireAuth>
           }
         />
