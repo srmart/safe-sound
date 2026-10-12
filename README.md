@@ -138,6 +138,23 @@ docker compose exec -T postgres psql -U safeandsound -d safe_and_sound < databas
 Get-Content database/migrate-rs8.sql | docker compose exec -T postgres psql -U safeandsound -d safe_and_sound
 ```
 
+Cada solicitud a un endpoint protegido queda registrada en `intentos_acceso_protegido` con los siguientes datos:
+
+| Campo | Descripción |
+|---|---|
+| `usuario_id` | Identificador del usuario autenticado. Es `NULL` cuando no se pudo autenticar la solicitud. |
+| `recurso` | Ruta solicitada, por ejemplo `/proyectos/12`. |
+| `operacion` | Método HTTP ejecutado: `GET`, `POST`, `PUT` o `DELETE`. |
+| `autorizado` | Resultado de la autorización. |
+| `codigo_respuesta` | Código HTTP devuelto por la aplicación. |
+| `fecha_hora` | Fecha y hora del intento. |
+
+Para consultar los últimos intentos registrados:
+
+```bash
+docker compose exec -T postgres psql -U safeandsound -d safe_and_sound -c "SELECT id, usuario_id, recurso, operacion, autorizado, codigo_respuesta, fecha_hora FROM intentos_acceso_protegido ORDER BY id DESC LIMIT 20;"
+```
+
 ### 3. Ejecutar el backend
 
 El backend necesita recibir las variables de `.env` en el proceso que lo ejecuta.
