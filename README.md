@@ -122,6 +122,22 @@ Get-Content database/migrate-rf7.sql | docker compose exec -T postgres psql -U s
 
 La migración agrega `foto_perfil`, `notificaciones_habilitadas` y `modo_oscuro` a la tabla `usuarios`. Es segura de ejecutar más de una vez porque usa `ADD COLUMN IF NOT EXISTS`.
 
+#### Registrar intentos de acceso a recursos protegidos (RS8)
+
+Las instalaciones nuevas crean automáticamente la tabla `intentos_acceso_protegido`. Si la base ya existía, aplicar la migración RS8 una vez, sin eliminar datos:
+
+**macOS, Linux o Git Bash:**
+
+```bash
+docker compose exec -T postgres psql -U safeandsound -d safe_and_sound < database/migrate-rs8.sql
+```
+
+**Windows PowerShell:**
+
+```powershell
+Get-Content database/migrate-rs8.sql | docker compose exec -T postgres psql -U safeandsound -d safe_and_sound
+```
+
 ### 3. Ejecutar el backend
 
 El backend necesita recibir las variables de `.env` en el proceso que lo ejecuta.
