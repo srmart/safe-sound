@@ -22,9 +22,21 @@ export function ProjectList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  
+  // Separación del estado del input y el estado de la búsqueda para aplicar debounce
+  const [nombreInput, setNombreInput] = useState('')
   const [nombre, setNombre] = useState('')
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>('ALL')
+  
   const navigate = useNavigate()
+
+  // SS-74: Debounce de 500ms para evitar condiciones de carrera y sobrecarga de la API
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setNombre(nombreInput)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [nombreInput])
 
   const fetchProjects = useCallback(async () => {
     setLoading(true)
@@ -77,6 +89,24 @@ export function ProjectList() {
     navigate(`/projects/${project.id}`, { state: { project } })
   }
 
+  function handleLimpiarFiltros() {
+    setNombreInput('')
+    setNombre('')
+    setFiltroEstado('ALL')
+  }
+
+  // SS-74: Extraer lógica de mensaje de estado vacío para mejorar legibilidad
+  function getEmptyStateMessage(): { title: string; description: string; showButton: boolean } {
+    const hasFilters = nombre || filtroEstado !== 'ALL'
+    return {
+      title: hasFilters ? 'No encontramos coincidencias' : 'Tu próximo proyecto empieza acá',
+      description: hasFilters ? 'Probá con otro nombre o estado.' : 'Creá un proyecto para comenzar a colaborar.',
+      showButton: !hasFilters,
+    }
+  }
+
+  const emptyStateMessage = getEmptyStateMessage()
+
   return (
     <main className="workspace">
       <header className="workspace-bar">
@@ -105,7 +135,13 @@ export function ProjectList() {
         <section className="project-toolbar" aria-label="Buscar y filtrar proyectos">
           <label className="search-field" htmlFor="buscar-proyecto">
             <span aria-hidden="true">⌕</span>
-            <input id="buscar-proyecto" type="search" value={nombre} onChange={(event) => setNombre(event.target.value)} placeholder="Buscar proyectos" />
+            <input
+              id="buscar-proyecto"
+              type="search"
+              value={nombreInput}
+              onChange={(event) => setNombreInput(event.target.value)}
+              placeholder="Buscar proyectos"
+            />
           </label>
           <label className="select-field" htmlFor="filtro-estado">
             <span>Estado</span>
@@ -115,7 +151,7 @@ export function ProjectList() {
               <option value="ARCHIVED">Archivados</option>
             </select>
           </label>
-          <button className="quiet-action" type="button" onClick={() => { setNombre(''); setFiltroEstado('ALL') }}>Limpiar</button>
+          <button className="quiet-action" type="button" onClick={handleLimpiarFiltros}>Limpiar</button>
         </section>
 
         {loading && <div className="project-state"><span className="loading-orb" /> Cargando tus proyectos…</div>}
@@ -132,26 +168,49 @@ export function ProjectList() {
             {projects.length === 0 ? (
               <div className="project-empty">
                 <span aria-hidden="true">♫</span>
-                <h2>{nombre || filtroEstado !== 'ALL' ? 'No encontramos coincidencias' : 'Tu próximo proyecto empieza acá'}</h2>
-                <p>{nombre || filtroEstado !== 'ALL' ? 'Probá con otro nombre o estado.' : 'Creá un proyecto para comenzar a colaborar.'}</p>
-                {!nombre && filtroEstado === 'ALL' && <button className="primary-action" type="button" onClick={() => setShowCreateModal(true)}>Crear proyecto</button>}
+                <h2>{emptyStateMessage.title}</h2>
+                <p>{emptyStateMessage.description}</p>
+                {emptyStateMessage.showButton && (
+                  <button className="primary-action" type="button" onClick={() => setShowCreateModal(true)}>
+                    Crear proyecto
+                  </button>
+                )}
               </div>
             ) : projects.map((project, index) => (
-              <article className={`project-card ${project.status === 'ARCHIVED' ? 'project-card--archived' : ''}`} key={project.id} onClick={() => openProject(project)} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') openProject(project) }}>
-                <div className="project-card__topline">
-                  <span className="project-art" style={{ '--card-hue': `${(index * 58 + 270) % 360}` } as CSSProperties}>{project.name.charAt(0).toUpperCase()}</span>
-                  <span className={`status-pill status-pill--${project.status.toLowerCase()}`}>{project.status === 'ACTIVE' ? 'Activo' : 'Archivado'}</span>
-                </div>
-                <div>
-                  <h2>{project.name}</h2>
-                  <p>{project.description}</p>
-                </div>
-                <footer className="project-card__footer">
-                  <span className="role-chip"><span aria-hidden="true">◉</span> {roleLabel(project.myRole)}</span>
-                  {project.myRole === 'OWNER' && project.status === 'ACTIVE' && (
-                    <button className="archive-action" type="button" onClick={(event) => { event.stopPropagation(); void handleArchive(project.id) }}>Archivar</button>
-                  )}
-                </footer>
+              <article
+                className={`project-card ${project.status === 'ARCHIVED' ? 'project-card--archived' : ''}`}
+                key={project.id}
+              >
+                <button
+                  type="button"
+                  className="project-card__content"
+                  onClick={() => openProject(project)}
+                >
+                  <div className="project-card__topline">
+                    <span className="project-art" style={{ '--card-hue': `${(index * 58 + 270) % 360}` } as CSSProperties}>
+                      {project.name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className={`status-pill status-pill--${project.status.toLowerCase()}`}>
+                      {project.status === 'ACTIVE' ? 'Activo' : 'Archivado'}
+                    </span>
+                  </div>
+                  <div>
+                    <h2>{project.name}</h2>
+                    <p>{project.description}</p>
+                  </div>
+                  <footer className="project-card__footer">
+                    <span className="role-chip"><span aria-hidden="true">◉</span> {roleLabel(project.myRole)}</span>
+                  </footer>
+                </button>
+                {project.myRole === 'OWNER' && project.status === 'ACTIVE' && (
+                  <button
+                    className="archive-action"
+                    type="button"
+                    onClick={(event) => { event.stopPropagation(); void handleArchive(project.id) }}
+                  >
+                    Archivar
+                  </button>
+                )}
               </article>
             ))}
           </section>
@@ -163,6 +222,12 @@ export function ProjectList() {
   )
 }
 
+const ROLE_LABELS: Record<ProjectRole, string> = {
+  OWNER: 'Propietario',
+  COLLABORATOR: 'Colaborador',
+  VIEWER: 'Solo lectura',
+}
+
 function roleLabel(role: ProjectRole) {
-  return role === 'OWNER' ? 'Propietario' : role === 'COLLABORATOR' ? 'Colaborador' : 'Solo lectura'
+  return ROLE_LABELS[role]
 }

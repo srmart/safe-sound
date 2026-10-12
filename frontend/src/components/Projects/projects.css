@@ -17,7 +17,7 @@
 .primary-action:hover, .quiet-action:hover, .archive-action:hover { transform: translateY(-1px); }
 .quiet-action { padding: 0.55rem 0.85rem; border: 1px solid #514969; background: rgba(255,255,255,.045); color: #e8e3f1; }
 .quiet-action:hover { border-color: #9d8cc3; background: rgba(255,255,255,.09); }
-.archive-action { padding: 0.4rem 0; border: 0; background: transparent; color: #fda4af; }
+.archive-action { padding: 0.4rem 0.75rem; border: 0; background: transparent; color: #fda4af; }
 .archive-action:hover { color: #fecdd3; }
 .project-toolbar { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 2rem; padding: 0.75rem; border: 1px solid rgba(255,255,255,.09); border-radius: 0.9rem; background: rgba(255,255,255,.035); }
 .search-field { display: flex; flex: 1; align-items: center; gap: 0.6rem; min-width: 12rem; padding: 0 0.75rem; border: 1px solid #443d59; border-radius: 0.55rem; background: #1a1629; color: #afa6c2; }
@@ -26,8 +26,45 @@
 .select-field { display: flex; align-items: center; gap: 0.6rem; color: #c8c0d7; font-size: 0.83rem; }
 .select-field select { min-height: 2.55rem; padding: 0 2rem 0 0.65rem; border: 1px solid #443d59; border-radius: 0.55rem; background: #1a1629; color: #f8f7ff; }
 .project-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-.project-card { display: flex; min-height: 15.5rem; flex-direction: column; justify-content: space-between; gap: 1rem; padding: 1.2rem; border: 1px solid rgba(255,255,255,.1); border-radius: 1rem; background: linear-gradient(145deg, rgba(43, 36, 65, .95), rgba(29, 24, 46, .95)); box-shadow: 0 1.2rem 2.3rem rgba(0,0,0,.14); cursor: pointer; transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
-.project-card:hover, .project-card:focus-visible { border-color: rgba(216,180,254,.6); box-shadow: 0 1.35rem 3rem rgba(0,0,0,.28); outline: 0; transform: translateY(-3px); }
+
+/* SS-74: Ajustes de accesibilidad - El article ya no es clickeable directamente */
+.project-card {
+  position: relative;
+  display: flex;
+  min-height: 15.5rem;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(43, 36, 65, .95), rgba(29, 24, 46, .95));
+  box-shadow: 0 1.2rem 2.3rem rgba(0,0,0,.14);
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+/* SS-74: El botón interno actúa como área clickeable de la tarjeta */
+.project-card__content {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 1rem;
+}
+
+.project-card:hover,
+.project-card__content:focus-visible {
+  border-color: rgba(216,180,254,.6);
+  box-shadow: 0 1.35rem 3rem rgba(0,0,0,.28);
+  outline: 0;
+  transform: translateY(-3px);
+}
+
 .project-card--archived { opacity: .62; }
 .project-card__topline, .project-card__footer, .detail-badges, .detail-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.65rem; }
 .project-art { display: grid; width: 2.9rem; height: 2.9rem; place-items: center; border-radius: .75rem; background: linear-gradient(145deg, hsl(var(--card-hue) 82% 66%), hsl(calc(var(--card-hue) + 42) 72% 42%)); color: #fff; font-size: 1.05rem; font-weight: 700; }
