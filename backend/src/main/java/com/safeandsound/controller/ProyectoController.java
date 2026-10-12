@@ -7,6 +7,7 @@ import com.safeandsound.service.AutorizacionService;
 import com.safeandsound.service.ProyectoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize; // <-- AGREGADO PARA RS20
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -14,6 +15,7 @@ import com.safeandsound.dto.ProyectoListadoDTO;
 
 @RestController
 @RequestMapping("/proyectos")
+@PreAuthorize("isAuthenticated()") // <-- AGREGADO PARA RS20: Garantiza explícitamente que NINGÚN endpoint de esta clase sea público
 public class ProyectoController {
 
     private final ProyectoService proyectoService;
@@ -105,6 +107,7 @@ public class ProyectoController {
 
         return ResponseEntity.noContent().build();
     }
+
     @PostMapping("/{proyectoId}/miembros/{usuarioId}")
     public ResponseEntity<Void> agregarMiembro(
             @PathVariable Long proyectoId,

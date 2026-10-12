@@ -1,7 +1,9 @@
 package com.safeandsound.controller;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.annotation.security.PermitAll; // <-- AGREGADO PARA RS20
 import jakarta.validation.Valid;
 import com.safeandsound.dto.RegistroRequest;
 import com.safeandsound.service.UsuarioService;
@@ -14,6 +16,7 @@ import com.safeandsound.security.JwtService;
 
 @RestController
 @RequestMapping("/auth")
+@PermitAll // <-- AGREGADO PARA RS20: Declara explícitamente que TODOS los endpoints de este controller son públicos
 public class AuthController {
 
     private final UsuarioService usuarioService;

@@ -21,7 +21,6 @@ public class AutorizacionService {
             Long proyectoId,
             Operacion operacion
     ) {
-
         ProyectoMiembro miembro;
 
         try {
@@ -32,12 +31,10 @@ public class AutorizacionService {
                                     "El usuario no pertenece al proyecto"
                             )
                     );
-
         } catch (AccessDeniedException e) {
             // Si el acceso ya fue denegado, mantenemos la denegación.
             throw e;
-
-        } catch (Exception e) {
+        } catch (Exception _) {
             // RS9: ante cualquier error durante la comprobación
             // de autorización, se deniega el acceso.
             throw new AccessDeniedException(
@@ -55,34 +52,33 @@ public class AutorizacionService {
     }
 
     private boolean tienePermiso(Rol rol, Operacion operacion) {
-
         // RS6: si falta información necesaria para autorizar,
         // el acceso se deniega por defecto.
         if (rol == null || operacion == null) {
             return false;
         }
 
+        // RS20: Matriz de autorización explícita.
+        // Cada operación y su rol permitido se definen aquí de forma visible y auditable.
         return switch (operacion) {
+            // Operaciones de Proyecto
+            case VER_PROYECTO -> rol == Rol.OWNER || rol == Rol.COLLABORATOR || rol == Rol.VIEWER;
+            case MODIFICAR_PROYECTO -> rol == Rol.OWNER;
+            case ARCHIVAR_PROYECTO -> rol == Rol.OWNER;
 
-            case VER_PROYECTO ->
-                    rol == Rol.OWNER ||
-                            rol == Rol.COLLABORATOR ||
-                            rol == Rol.VIEWER;
+            // Operaciones de Miembros
+            case VER_MIEMBROS -> rol == Rol.OWNER || rol == Rol.COLLABORATOR || rol == Rol.VIEWER;
+            case AGREGAR_MIEMBRO -> rol == Rol.OWNER;
+            case ELIMINAR_MIEMBRO -> rol == Rol.OWNER;
+            case MODIFICAR_ROLES -> rol == Rol.OWNER;
 
-            case MODIFICAR_PROYECTO ->
-                    rol == Rol.OWNER;
+            // Operaciones de Archivos
+            case VER_ARCHIVOS -> rol == Rol.OWNER || rol == Rol.COLLABORATOR || rol == Rol.VIEWER;
+            case SUBIR_ARCHIVO -> rol == Rol.OWNER || rol == Rol.COLLABORATOR;
+            case DESCARGAR_ARCHIVO -> rol == Rol.OWNER || rol == Rol.COLLABORATOR || rol == Rol.VIEWER;
+            case ELIMINAR_ARCHIVO -> rol == Rol.OWNER || rol == Rol.COLLABORATOR;
 
-            case ARCHIVAR_PROYECTO ->
-                    rol == Rol.OWNER;
-
-            case VER_MIEMBROS ->
-                    rol == Rol.OWNER ||
-                            rol == Rol.COLLABORATOR ||
-                            rol == Rol.VIEWER;
-
-            case MODIFICAR_ROLES ->
-                    rol == Rol.OWNER;
-
+            // RS20 / RS6: Cualquier operación no listada explícitamente se deniega por defecto.
             default -> false;
         };
     }
