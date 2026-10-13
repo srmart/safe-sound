@@ -8,13 +8,16 @@ public enum Operacion {
     
     // Operaciones de miembros
     VER_MIEMBROS,
-    AGREGAR_MIEMBRO,      // <-- AGREGADO PARA RS20
-    ELIMINAR_MIEMBRO,     // <-- AGREGADO PARA RS20
+    AGREGAR_MIEMBRO,
+    ELIMINAR_MIEMBRO,
     MODIFICAR_ROLES,
     
     // Operaciones de archivos
-    VER_ARCHIVOS,         // <-- AGREGADO PARA RS20
-    SUBIR_ARCHIVO,        // <-- AGREGADO PARA RS20
-    DESCARGAR_ARCHIVO,    // <-- AGREGADO PARA RS20
-    ELIMINAR_ARCHIVO      // <-- AGREGADO PARA RS20
+    VER_ARCHIVOS,
+    SUBIR_ARCHIVO,
+    DESCARGAR_ARCHIVO,
+    ELIMINAR_ARCHIVO,
+
+    // Operaciones administrativas (RS19)
+    VER_AUDITORIA // <-- AGREGADO PARA RS19
 }
