@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.safeandsound.service.AuditService;
 
 class RS29IntegrationTests {
 
@@ -34,9 +35,11 @@ class RS29IntegrationTests {
         proyectoService = mock(ProyectoService.class);
         autorizacionService = mock(AutorizacionService.class);
 
+        // <-- CAMBIO AQUÍ: Se agrega el mock de AuditService como tercer argumento
         ProyectoController controller = new ProyectoController(
                 proyectoService,
-                autorizacionService
+                autorizacionService,
+                mock(AuditService.class)
         );
 
         mockMvc = MockMvcBuilders

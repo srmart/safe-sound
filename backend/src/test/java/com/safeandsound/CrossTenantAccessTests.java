@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import com.safeandsound.service.AuditService;
 
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,14 +22,16 @@ class CrossTenantAccessTests {
     private AutorizacionService autorizacionService;
     private ProyectoController proyectoController;
 
-    @BeforeEach
+        @BeforeEach
     void setUp() {
         proyectoService = mock(ProyectoService.class);
         autorizacionService = mock(AutorizacionService.class);
 
+        // <-- CAMBIO AQUÍ: Se agrega el mock de AuditService como tercer argumento
         proyectoController = new ProyectoController(
                 proyectoService,
-                autorizacionService
+                autorizacionService,
+                mock(AuditService.class)
         );
     }
 

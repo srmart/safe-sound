@@ -14,6 +14,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.safeandsound.service.AuditService;
 
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,10 +31,12 @@ class CrossTenantHttpTests {
         proyectoService = mock(ProyectoService.class);
         autorizacionService = mock(AutorizacionService.class);
 
+        // <-- CAMBIO AQUÍ: Se agrega el mock de AuditService como tercer argumento
         ProyectoController proyectoController =
                 new ProyectoController(
                         proyectoService,
-                        autorizacionService
+                        autorizacionService,
+                        mock(AuditService.class)
                 );
 
         mockMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
