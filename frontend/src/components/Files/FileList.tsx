@@ -1,64 +1,156 @@
-import { useMemo, useState } from 'react'
-import { mockFiles } from '../../pruebas/data'
-import type { ProjectFile, ProjectRole } from '../../types'
+import { useEffect, useMemo, useState } from 'react'
+import { getAccessToken } from '../../api/tokenStorage'
+import { proyectosApi } from '../../api/proyectos'
+import type { ProjectRole } from '../../types'
 import { UploadFileModal } from './UploadFileModal'
 import './files.css'
+
+// Interfaz para representar un archivo según viene del backend
+interface ArchivoBackend {
+  id: number
+  nombre: string
+  tamano: number
+  fechaSubida: string
+  usuario?: {
+    username?: string
+    email?: string
+  }
+}
+
+// Interfaz para el archivo en el frontend (lo que muestra la tabla)
+interface ArchivoUI {
+  id: string
+  fileName: string
+  fileSize: string
+  uploadedBy: string
+  uploadDate: string
+  backendId: number
+}
 
 interface FileListProps {
   projectId: string
   userRole: ProjectRole
 }
 
-type LocalProjectFile = ProjectFile & { source?: File }
-
 const rolesWithModification = new Set<ProjectRole>(['OWNER', 'COLLABORATOR'])
 
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 export function FileList({ projectId, userRole }: FileListProps) {
-  const [files, setFiles] = useState<LocalProjectFile[]>(() =>
-    mockFiles.filter((file) => file.projectId === projectId),
-  )
+  const [files, setFiles] = useState<ArchivoUI[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const canModify = rolesWithModification.has(userRole)
+
   const fileCountLabel = useMemo(
     () => `${files.length} ${files.length === 1 ? 'archivo disponible' : 'archivos disponibles'}`,
     [files.length],
   )
 
-  function handleUpload(source: File) {
-    const addedFile: LocalProjectFile = {
-      id: crypto.randomUUID(),
-      projectId,
-      fileName: source.name,
-      fileSize: formatFileSize(source.size),
-      uploadedBy: 'Vos',
-      uploadDate: new Intl.DateTimeFormat('es-UY', { dateStyle: 'medium' }).format(new Date()),
-      source,
+  // Cargar archivos reales desde el backend al montar el componente
+  useEffect(() => {
+    let mounted = true
+    setIsLoading(true)
+    setError(null)
+
+    proyectosApi
+      .listarArchivos(projectId)
+      .then((archivos: ArchivoBackend[]) => {
+        if (!mounted) return
+        const archivosUI: ArchivoUI[] = archivos.map((a) => ({
+          id: String(a.id),
+          backendId: a.id,
+          fileName: a.nombre,
+          fileSize: formatFileSize(a.tamano),
+          uploadedBy: a.usuario?.username || a.usuario?.email || 'Desconocido',
+          uploadDate: new Intl.DateTimeFormat('es-UY', { dateStyle: 'medium' }).format(
+            new Date(a.fechaSubida),
+          ),
+        }))
+        setFiles(archivosUI)
+      })
+      .catch((err) => {
+        if (!mounted) return
+        setError(err instanceof Error ? err.message : 'Error al cargar los archivos')
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false)
+      })
+
+    return () => {
+      mounted = false
     }
-    setFiles((currentFiles) => [addedFile, ...currentFiles])
-    setNotice(`“${source.name}” se agregó al proyecto.`)
+  }, [projectId])
+
+  // Subir archivo real al backend
+  async function handleUpload(source: File) {
+    setError(null)
+    try {
+      const archivoCreado = await proyectosApi.subirArchivo(projectId, source)
+      
+      const nuevoArchivo: ArchivoUI = {
+        id: String(archivoCreado.id),
+        backendId: archivoCreado.id,
+        fileName: archivoCreado.nombre,
+        fileSize: formatFileSize(archivoCreado.tamano),
+        uploadedBy: archivoCreado.usuario?.username || 'Vos',
+        uploadDate: new Intl.DateTimeFormat('es-UY', { dateStyle: 'medium' }).format(
+          new Date(archivoCreado.fechaSubida),
+        ),
+      }
+      
+      setFiles((currentFiles) => [nuevoArchivo, ...currentFiles])
+      setNotice(`"${source.name}" se agregó al proyecto.`)
+      setIsUploadOpen(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al subir el archivo')
+    }
   }
 
-  function handleDelete(file: LocalProjectFile) {
-    if (!window.confirm(`¿Eliminar “${file.fileName}”? Esta acción no se puede deshacer.`)) return
-    setFiles((currentFiles) => currentFiles.filter((currentFile) => currentFile.id !== file.id))
-    setNotice(`“${file.fileName}” fue eliminado del proyecto.`)
+  // Eliminar archivo real del backend
+  async function handleDelete(file: ArchivoUI) {
+    if (!window.confirm(`¿Eliminar "${file.fileName}"? Esta acción no se puede deshacer.`)) return
+    
+    setError(null)
+    try {
+      await proyectosApi.eliminarArchivo(projectId, file.id)
+      setFiles((currentFiles) => currentFiles.filter((f) => f.id !== file.id))
+      setNotice(`"${file.fileName}" fue eliminado del proyecto.`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar el archivo')
+    }
   }
 
-  function handleDownload(file: LocalProjectFile) {
-    const blob = file.source ?? new Blob(
-      [`Archivo de muestra: ${file.fileName}\nSubido por ${file.uploadedBy} el ${file.uploadDate}.`],
-      { type: 'text/plain;charset=utf-8' },
-    )
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = file.fileName
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    URL.revokeObjectURL(url)
-    setNotice(`Se descargó “${file.fileName}”.`)
+  // Descargar archivo real desde el backend
+  async function handleDownload(file: ArchivoUI) {
+    try {
+      const token = getAccessToken()
+      const response = await fetch(`${API_URL}/proyectos/${projectId}/archivos/${file.backendId}`, {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('No se pudo descargar el archivo')
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+      setNotice(`Se descargó "${file.fileName}".`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al descargar')
+    }
   }
 
   return (
@@ -77,8 +169,14 @@ export function FileList({ projectId, userRole }: FileListProps) {
       </div>
 
       {notice && <p className="file-notice" role="status">{notice}</p>}
+      {error && <p className="file-notice" role="alert" style={{ background: '#fee', color: '#c00' }}>{error}</p>}
 
-      {files.length === 0 ? (
+      {isLoading ? (
+        <div className="file-empty-state">
+          <span className="file-empty-state__icon" aria-hidden="true">⌁</span>
+          <h3>Cargando archivos...</h3>
+        </div>
+      ) : files.length === 0 ? (
         <div className="file-empty-state">
           <span className="file-empty-state__icon" aria-hidden="true">⌁</span>
           <h3>Todavía no hay archivos</h3>
