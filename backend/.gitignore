@@ -36,3 +36,5 @@ build/
 *.hprof
 *.hprof.hwcache/
 
+# Archivos subidos por los usuarios
+**/storage/

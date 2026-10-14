@@ -45,3 +45,10 @@ build/
 # Local environment / secrets
 .env
 application-local.properties
+
+# Archivos temporales de pruebas de gestión de archivos
+/archivo_grande.pdf
+/prueba_no_permitida.txt
+/archivo_viewer.pdf
+/backend/prueba_archivos.pdf
+/backend/archivo_descargado.pdf
