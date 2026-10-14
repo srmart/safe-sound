@@ -76,3 +76,31 @@ CREATE TABLE IF NOT EXISTS intentos_acceso_protegido (
 CREATE INDEX IF NOT EXISTS idx_intentos_acceso_fecha_hora
     ON intentos_acceso_protegido (fecha_hora DESC);
 
+
+-- Gestión de archivos asociados a proyectos
+CREATE TABLE IF NOT EXISTS archivos (
+                                        id BIGSERIAL PRIMARY KEY,
+
+                                        proyecto_id BIGINT NOT NULL,
+                                        subido_por BIGINT NOT NULL,
+
+                                        nombre_original VARCHAR(255) NOT NULL,
+    nombre_almacenado UUID NOT NULL UNIQUE,
+    tipo_mime VARCHAR(100) NOT NULL,
+    tamanio BIGINT NOT NULL CHECK (tamanio >= 0),
+    fecha_subida TIMESTAMP WITH TIME ZONE NOT NULL,
+
+                               CONSTRAINT fk_archivo_proyecto
+                               FOREIGN KEY (proyecto_id)
+    REFERENCES proyectos(id),
+
+    CONSTRAINT fk_archivo_usuario
+    FOREIGN KEY (subido_por)
+    REFERENCES usuarios(id)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_archivos_proyecto
+    ON archivos(proyecto_id);
+
+CREATE INDEX IF NOT EXISTS idx_archivos_proyecto_usuario
+    ON archivos(proyecto_id, subido_por);
