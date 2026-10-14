@@ -1,150 +1,184 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { proyectosApi, SesionExpiradaError } from '../../api/proyectos'
-import { clearTokens } from '../../api/tokenStorage'
-import type { Project } from '../../types'
-import type { ProjectRole } from '../../types'
 import { FileList } from '../Files/FileList'
 import { EditProjectModal } from './EditProjectModal'
 import './projects.css'
 
-interface ProyectoListadoResponse {
-  id: number
-  rol: ProjectRole
-}
-
-interface ProyectoDetalleResponse {
+// Definimos la interfaz según lo que devuelve el backend
+interface ProyectoBackend {
   id: number
   nombre: string
-  descripcion: string | null
+  descripcion: string
   activo: boolean
-}
-
-function toProject(detail: ProyectoDetalleResponse, rol: ProjectRole): Project {
-  return {
-    id: String(detail.id),
-    name: detail.nombre,
-    description: detail.descripcion || 'Sin descripción todavía.',
-    status: detail.activo ? 'ACTIVE' : 'ARCHIVED',
-    myRole: rol,
-  }
+  creadoPor: { id: number; username: string }
+  miRol: 'OWNER' | 'COLLABORATOR' | 'VIEWER'
 }
 
 export function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
-  const [project, setProject] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(true)
+
+  const [project, setProject] = useState<ProyectoBackend | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
+  // Helper para obtener el texto del rol (corrige el nested ternary)
+  const getRoleLabel = (role: 'OWNER' | 'COLLABORATOR' | 'VIEWER') => {
+    if (role === 'OWNER') return 'Propietario'
+    if (role === 'COLLABORATOR') return 'Colaborador'
+    return 'Solo lectura'
+  }
+
+  // Cargar el proyecto real desde el backend
   useEffect(() => {
-    let active = true
+    if (!projectId) return
 
-    async function loadProject() {
-      if (!projectId) {
-        if (active) setLoading(false)
-        return
-      }
+    setIsLoading(true)
+    setError(null)
 
-      setLoading(true)
-      setError(null)
-      setProject(null)
-
-      try {
-        // Este endpoint solo incluye proyectos donde el usuario autenticado es miembro.
-        const projects: ProyectoListadoResponse[] = await proyectosApi.listar()
-        const membership = projects.find((item) => String(item.id) === projectId)
-
-        if (!membership) return
-
-        // El backend vuelve a validar la membresía para la consulta de detalle.
-        const detail: ProyectoDetalleResponse = await proyectosApi.obtenerPorId(projectId)
-        if (active) setProject(toProject(detail, membership.rol))
-      } catch (err) {
-        if (!active) return
+    proyectosApi
+      .obtenerPorId(projectId)
+      .then((data: ProyectoBackend) => {
+        setProject(data)
+      })
+      .catch((err) => {
         if (err instanceof SesionExpiradaError) {
-          clearTokens()
-          navigate('/login', { replace: true })
-          return
+          navigate('/login', { state: { from: `/proyectos/${projectId}` } })
+        } else if (err.message.includes('403') || err.message.includes('404')) {
+          setError('No tienes permisos para ver este proyecto o no existe.')
+        } else {
+          setError('Error al cargar el proyecto. Inténtalo de nuevo.')
         }
-        setError(err instanceof Error ? err.message : 'No se pudo cargar el proyecto.')
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [projectId, navigate])
 
-    void loadProject()
-    return () => { active = false }
-  }, [navigate, projectId])
-
-  async function handleSaveEdit(_id: string, name: string, description: string) {
+  function handleSaveEdit(id: string, name: string, description: string) {
     if (!project) return
 
-    try {
-      const updated: ProyectoDetalleResponse = await proyectosApi.modificar(project.id, name, description)
-      setProject(toProject(updated, project.myRole))
-      setShowEditModal(false)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo modificar el proyecto.')
-    }
+    // Llamada real a la API para modificar
+    proyectosApi
+      .modificar(project.id.toString(), name, description)
+      .then(() => {
+        setProject({ ...project, nombre: name, descripcion: description })
+        setShowEditModal(false)
+      })
+      .catch((err) => {
+        alert(err instanceof Error ? err.message : 'Error al modificar el proyecto')
+      })
   }
 
-  async function handleArchive() {
+  function handleArchive() {
     if (!project || !window.confirm('¿Querés archivar este proyecto?')) return
 
-    try {
-      await proyectosApi.archivar(project.id)
-      navigate('/projects', { replace: true })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo archivar el proyecto.')
-    }
+    proyectosApi
+      .archivar(project.id.toString())
+      .then(() => {
+        setProject({ ...project, activo: false })
+      })
+      .catch((err) => {
+        alert(err instanceof Error ? err.message : 'Error al archivar el proyecto')
+      })
   }
 
-  if (loading) {
-    return <main className="workspace"><div className="project-state"><span className="loading-orb" /> Cargando proyecto…</div></main>
+  // Estado de carga
+  if (isLoading) {
+    return (
+      <main className="workspace">
+        <section className="project-not-found">
+          <span aria-hidden="true">⌛</span>
+          <h1>Cargando proyecto...</h1>
+        </section>
+      </main>
+    )
   }
 
-  if (error) {
-    return <main className="workspace"><section className="project-not-found"><span aria-hidden="true">!</span><h1>No se pudo abrir el proyecto</h1><p>{error}</p><button className="primary-action" type="button" onClick={() => navigate('/projects')}>Ver mis proyectos</button></section></main>
+  // Estado de error (ej: 403 Forbidden o 404 Not Found)
+  if (error || !project) {
+    return (
+      <main className="workspace">
+        <section className="project-not-found">
+          <span aria-hidden="true">⛔</span>
+          <h1>Acceso denegado o proyecto no encontrado</h1>
+          <p>{error || 'No tienes los permisos necesarios para ver este proyecto.'}</p>
+          <button className="primary-action" type="button" onClick={() => navigate('/projects')}>
+            Volver a mis proyectos
+          </button>
+        </section>
+      </main>
+    )
   }
 
-  if (!project) {
-    return <main className="workspace"><section className="project-not-found"><span aria-hidden="true">♪</span><h1>Proyecto no encontrado</h1><p>No tenés acceso a este proyecto o ya no está disponible.</p><button className="primary-action" type="button" onClick={() => navigate('/projects')}>Ver mis proyectos</button></section></main>
-  }
+  // Determinar si el usuario es propietario (se eliminó la variable canModify que no se usaba)
+  const isOwner = project.miRol === 'OWNER'
 
   return (
     <main className="workspace">
       <header className="workspace-bar">
-        <button className="brand" type="button" onClick={() => navigate('/projects')}><span className="brand__mark" aria-hidden="true">⌁</span><span>Safe &amp; Sound</span></button>
+        <button className="brand" type="button" onClick={() => navigate('/projects')}>
+          <span className="brand__mark" aria-hidden="true">⌁</span>
+          <span>Safe &amp; Sound</span>
+        </button>
         <div className="workspace-bar__actions">
           <button className="workspace-bar__profile" type="button" onClick={() => navigate('/profile')}>Perfil</button>
-          <span className="workspace-bar__status"><i /> Proyecto privado</span>
+          <span className="workspace-bar__status">
+            <i /> {project.activo ? 'Proyecto activo' : 'Proyecto archivado'}
+          </span>
         </div>
       </header>
+
       <section className="project-detail">
-        <button className="back-link" type="button" onClick={() => navigate('/projects')}>← Volver a proyectos</button>
+        <button className="back-link" type="button" onClick={() => navigate('/projects')}>
+          ← Volver a proyectos
+        </button>
+
         <header className="project-detail__hero">
-          <div className="project-detail__art" aria-hidden="true">{project.name.charAt(0).toUpperCase()}</div>
+          <div className="project-detail__art" aria-hidden="true">
+            {project.nombre.charAt(0).toUpperCase()}
+          </div>
           <div className="project-detail__content">
             <p className="eyebrow">Proyecto musical</p>
-            <h1>{project.name}</h1>
-            <p>{project.description}</p>
+            <h1>{project.nombre}</h1>
+            <p>{project.descripcion}</p>
             <div className="detail-badges">
-              <span className={`status-pill status-pill--${project.status.toLowerCase()}`}>{project.status === 'ACTIVE' ? 'Activo' : 'Archivado'}</span>
-              <span className="role-chip"><span aria-hidden="true">◉</span> {project.myRole === 'OWNER' ? 'Propietario' : project.myRole === 'COLLABORATOR' ? 'Colaborador' : 'Solo lectura'}</span>
+              <span className={`status-pill status-pill--${project.activo ? 'active' : 'archived'}`}>
+                {project.activo ? 'Activo' : 'Archivado'}
+              </span>
+              <span className="role-chip">
+                <span aria-hidden="true">◉</span>{' '}
+                {getRoleLabel(project.miRol)}
+              </span>
             </div>
           </div>
-          {project.myRole === 'OWNER' && project.status === 'ACTIVE' && (
+
+          {/* Solo mostrar acciones si es OWNER y está activo */}
+          {isOwner && project.activo && (
             <div className="detail-actions">
-              <button className="quiet-action" type="button" onClick={() => setShowEditModal(true)}>Editar proyecto</button>
-              <button className="archive-action" type="button" onClick={() => void handleArchive()}>Archivar</button>
+              <button className="quiet-action" type="button" onClick={() => setShowEditModal(true)}>
+                Editar proyecto
+              </button>
+              <button className="archive-action" type="button" onClick={handleArchive}>
+                Archivar
+              </button>
             </div>
           )}
         </header>
-        <FileList projectId={project.id} userRole={project.myRole} />
+
+        {/* FileList ya tiene su propia lógica interna para ocultar botones según userRole */}
+        <FileList projectId={project.id.toString()} userRole={project.miRol} />
       </section>
-      {showEditModal && <EditProjectModal project={project} onClose={() => setShowEditModal(false)} onSave={(id, name, description) => void handleSaveEdit(id, name, description)} />}
+
+      {showEditModal && (
+        <EditProjectModal
+          project={{ id: project.id.toString(), name: project.nombre, description: project.descripcion }}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleSaveEdit}
+        />
+      )}
     </main>
   )
 }
