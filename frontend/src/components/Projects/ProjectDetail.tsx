@@ -1,36 +1,116 @@
-import { useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { mockProjects } from '../../pruebas/data'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { proyectosApi, SesionExpiradaError } from '../../api/proyectos'
+import { clearTokens } from '../../api/tokenStorage'
 import type { Project } from '../../types'
+import type { ProjectRole } from '../../types'
 import { FileList } from '../Files/FileList'
 import { EditProjectModal } from './EditProjectModal'
 import './projects.css'
 
-interface DetailLocationState { project?: Project }
+interface ProyectoListadoResponse {
+  id: number
+  rol: ProjectRole
+}
+
+interface ProyectoDetalleResponse {
+  id: number
+  nombre: string
+  descripcion: string | null
+  activo: boolean
+}
+
+function toProject(detail: ProyectoDetalleResponse, rol: ProjectRole): Project {
+  return {
+    id: String(detail.id),
+    name: detail.nombre,
+    description: detail.descripcion || 'Sin descripción todavía.',
+    status: detail.activo ? 'ACTIVE' : 'ARCHIVED',
+    myRole: rol,
+  }
+}
 
 export function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
-  const location = useLocation()
-  const state = location.state as DetailLocationState | null
-  const [project, setProject] = useState<Project | undefined>(state?.project ?? mockProjects.find((item) => item.id === projectId))
+  const [project, setProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
-  function handleSaveEdit(id: string, name: string, description: string) {
+  useEffect(() => {
+    let active = true
+
+    async function loadProject() {
+      if (!projectId) {
+        if (active) setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+      setProject(null)
+
+      try {
+        // Este endpoint solo incluye proyectos donde el usuario autenticado es miembro.
+        const projects: ProyectoListadoResponse[] = await proyectosApi.listar()
+        const membership = projects.find((item) => String(item.id) === projectId)
+
+        if (!membership) return
+
+        // El backend vuelve a validar la membresía para la consulta de detalle.
+        const detail: ProyectoDetalleResponse = await proyectosApi.obtenerPorId(projectId)
+        if (active) setProject(toProject(detail, membership.rol))
+      } catch (err) {
+        if (!active) return
+        if (err instanceof SesionExpiradaError) {
+          clearTokens()
+          navigate('/login', { replace: true })
+          return
+        }
+        setError(err instanceof Error ? err.message : 'No se pudo cargar el proyecto.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    void loadProject()
+    return () => { active = false }
+  }, [navigate, projectId])
+
+  async function handleSaveEdit(_id: string, name: string, description: string) {
     if (!project) return
-    const updatedProject = { ...project, id, name, description }
-    setProject(updatedProject)
-    const index = mockProjects.findIndex((item) => item.id === id)
-    if (index !== -1) mockProjects[index] = updatedProject
+
+    try {
+      const updated: ProyectoDetalleResponse = await proyectosApi.modificar(project.id, name, description)
+      setProject(toProject(updated, project.myRole))
+      setShowEditModal(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo modificar el proyecto.')
+    }
   }
 
-  function handleArchive() {
+  async function handleArchive() {
     if (!project || !window.confirm('¿Querés archivar este proyecto?')) return
-    setProject({ ...project, status: 'ARCHIVED' })
+
+    try {
+      await proyectosApi.archivar(project.id)
+      navigate('/projects', { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo archivar el proyecto.')
+    }
+  }
+
+  if (loading) {
+    return <main className="workspace"><div className="project-state"><span className="loading-orb" /> Cargando proyecto…</div></main>
+  }
+
+  if (error) {
+    return <main className="workspace"><section className="project-not-found"><span aria-hidden="true">!</span><h1>No se pudo abrir el proyecto</h1><p>{error}</p><button className="primary-action" type="button" onClick={() => navigate('/projects')}>Ver mis proyectos</button></section></main>
   }
 
   if (!project) {
-    return <main className="workspace"><section className="project-not-found"><span aria-hidden="true">♪</span><h1>Proyecto no encontrado</h1><p>Volvé a tu biblioteca para elegir un proyecto disponible.</p><button className="primary-action" type="button" onClick={() => navigate('/projects')}>Ver mis proyectos</button></section></main>
+    return <main className="workspace"><section className="project-not-found"><span aria-hidden="true">♪</span><h1>Proyecto no encontrado</h1><p>No tenés acceso a este proyecto o ya no está disponible.</p><button className="primary-action" type="button" onClick={() => navigate('/projects')}>Ver mis proyectos</button></section></main>
   }
 
   return (
@@ -58,13 +138,13 @@ export function ProjectDetail() {
           {project.myRole === 'OWNER' && project.status === 'ACTIVE' && (
             <div className="detail-actions">
               <button className="quiet-action" type="button" onClick={() => setShowEditModal(true)}>Editar proyecto</button>
-              <button className="archive-action" type="button" onClick={handleArchive}>Archivar</button>
+              <button className="archive-action" type="button" onClick={() => void handleArchive()}>Archivar</button>
             </div>
           )}
         </header>
         <FileList projectId={project.id} userRole={project.myRole} />
       </section>
-      {showEditModal && <EditProjectModal project={project} onClose={() => setShowEditModal(false)} onSave={handleSaveEdit} />}
+      {showEditModal && <EditProjectModal project={project} onClose={() => setShowEditModal(false)} onSave={(id, name, description) => void handleSaveEdit(id, name, description)} />}
     </main>
   )
 }
