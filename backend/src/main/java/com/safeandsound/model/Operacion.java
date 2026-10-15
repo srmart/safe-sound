@@ -18,6 +18,12 @@ public enum Operacion {
     DESCARGAR_ARCHIVO,
     ELIMINAR_ARCHIVO,
 
+    // Operaciones de restauración JIT
+    SOLICITAR_RESTAURACION,
+    APROBAR_SOLICITUD_RESTAURACION,
+    RECHAZAR_SOLICITUD_RESTAURACION,
+    RESTAURAR_ARCHIVO,
+
     // Operaciones administrativas (RS19)
     VER_AUDITORIA // <-- AGREGADO PARA RS19
 }

@@ -48,7 +48,13 @@ public class SecurityConfig {
                                 "/auth/refresh",
                                 "/auth/logout"
                         ).permitAll()
-                        .anyRequest().authenticated()
+
+                        .requestMatchers(
+                                "/proyectos/**",
+                                "/perfil/**"
+                        ).authenticated()
+
+                        .anyRequest().denyAll()
                 )
                 .addFilterBefore(
                         jwtAuthenticationFilter,

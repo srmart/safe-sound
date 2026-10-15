@@ -46,6 +46,7 @@ public class ProyectoService {
         ProyectoMiembro miembro = new ProyectoMiembro();
         miembro.setProyecto(proyectoGuardado);
         miembro.setUsuario(usuario);
+
         miembro.setRol(Rol.OWNER);
 
         proyectoMiembroRepository.save(miembro);

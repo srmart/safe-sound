@@ -2,6 +2,7 @@ package com.safeandsound.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.Instant;
 
 @Entity
 @Table(name = "archivos_proyecto")
@@ -31,6 +32,12 @@ public class ArchivoProyecto {
     @Column(nullable = false)
     private LocalDate fechaSubida;
 
+    @Column(nullable = false)
+    private boolean eliminado = false;
+
+    @Column(name = "eliminado_en")
+    private Instant eliminadoEn;
+
     // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -49,6 +56,14 @@ public class ArchivoProyecto {
 
     public Long getTamano() { return tamano; }
     public void setTamano(Long tamano) { this.tamano = tamano; }
+
+    public boolean isEliminado() { return eliminado; }
+
+    public void setEliminado(boolean eliminado) { this.eliminado = eliminado;}
+
+    public Instant getEliminadoEn() { return eliminadoEn; }
+
+    public void setEliminadoEn(Instant eliminadoEn) { this.eliminadoEn = eliminadoEn; }
 
     public LocalDate getFechaSubida() { return fechaSubida; }
     public void setFechaSubida(LocalDate fechaSubida) { this.fechaSubida = fechaSubida; }

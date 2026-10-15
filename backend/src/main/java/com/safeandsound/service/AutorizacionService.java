@@ -78,6 +78,13 @@ public class AutorizacionService {
             case DESCARGAR_ARCHIVO -> rol == Rol.OWNER || rol == Rol.COLLABORATOR || rol == Rol.VIEWER;
             case ELIMINAR_ARCHIVO -> rol == Rol.OWNER || rol == Rol.COLLABORATOR;
 
+            // --- Operaciones de restauración JIT ---
+            case SOLICITAR_RESTAURACION -> rol == Rol.COLLABORATOR;
+            case APROBAR_SOLICITUD_RESTAURACION, RECHAZAR_SOLICITUD_RESTAURACION -> rol == Rol.OWNER;
+            // La restauración requiere una autorización JIT vigente.
+            // No se concede por el rol permanente.
+            case RESTAURAR_ARCHIVO -> false;
+
             // --- Operaciones Administrativas (RS19) ---
             case VER_AUDITORIA -> rol == Rol.OWNER; // <-- AGREGADO PARA RS19
 
