@@ -1,13 +1,13 @@
 
 package com.safeandsound.service;
 
-import com.safeandsound.model.ArchivoProyecto;
+import com.safeandsound.model.Archivo;
 import com.safeandsound.model.EstadoSolicitudRestauracion;
 import com.safeandsound.model.Operacion;
 import com.safeandsound.model.Proyecto;
 import com.safeandsound.model.SolicitudRestauracion;
 import com.safeandsound.model.Usuario;
-import com.safeandsound.repository.ArchivoProyectoRepository;
+import com.safeandsound.repository.ArchivoRepository;
 import com.safeandsound.repository.ProyectoRepository;
 import com.safeandsound.repository.SolicitudRestauracionRepository;
 import com.safeandsound.repository.UsuarioRepository;
@@ -19,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -29,20 +27,22 @@ import java.time.temporal.ChronoUnit;
 public class SolicitudRestauracionService {
 
     private final SolicitudRestauracionRepository solicitudRepository;
-    private final ArchivoProyectoRepository archivoRepository;
+    private final ArchivoRepository archivoRepository;
     private final ProyectoRepository proyectoRepository;
     private final UsuarioRepository usuarioRepository;
     private final AutorizacionService autorizacionService;
+    private final ArchivoStorageService archivoStorageService;
 
     private final long tiempoGraciaHoras;
     private final long duracionJitMinutos;
 
     public SolicitudRestauracionService(
             SolicitudRestauracionRepository solicitudRepository,
-            ArchivoProyectoRepository archivoRepository,
+            ArchivoRepository archivoRepository,
             ProyectoRepository proyectoRepository,
             UsuarioRepository usuarioRepository,
             AutorizacionService autorizacionService,
+            ArchivoStorageService archivoStorageService,
             @Value("${app.archivos.tiempo-gracia-horas:3}")
             long tiempoGraciaHoras,
             @Value("${app.jit.duracion-minutos:10}")
@@ -53,6 +53,7 @@ public class SolicitudRestauracionService {
         this.proyectoRepository = proyectoRepository;
         this.usuarioRepository = usuarioRepository;
         this.autorizacionService = autorizacionService;
+        this.archivoStorageService = archivoStorageService;
         this.tiempoGraciaHoras = tiempoGraciaHoras;
         this.duracionJitMinutos = duracionJitMinutos;
     }
@@ -67,7 +68,7 @@ public class SolicitudRestauracionService {
                 usuarioId, proyectoId,
                 Operacion.SOLICITAR_RESTAURACION);
 
-        ArchivoProyecto archivo = archivoRepository
+        Archivo archivo = archivoRepository
                 .findByIdAndProyectoIdAndEliminadoTrue(
                         archivoId, proyectoId)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -166,7 +167,7 @@ public class SolicitudRestauracionService {
     }
 
     @Transactional
-    public ArchivoProyecto restaurarArchivo(
+    public Archivo restaurarArchivo(
             Long usuarioId,
             Long proyectoId,
             Long solicitudId) {
@@ -200,7 +201,7 @@ public class SolicitudRestauracionService {
                     "La autorización JIT venció o ya fue utilizada");
         }
 
-        ArchivoProyecto archivo = solicitud.getArchivo();
+        Archivo archivo = solicitud.getArchivo();
 
         validarPeriodoDeGracia(archivo);
 
@@ -210,12 +211,13 @@ public class SolicitudRestauracionService {
                     "El archivo ya fue restaurado");
         }
 
-        Path ruta = Paths.get(archivo.getRuta()).toAbsolutePath().normalize();
-
-        if (!Files.isRegularFile(ruta)) {
+        try {
+            archivoStorageService.obtener(archivo.getNombreAlmacenado());
+        } catch (IOException e) {
             throw new ResponseStatusException(
                     HttpStatus.GONE,
-                    "El archivo físico ya no está disponible");
+                    "El archivo físico ya no está disponible", e
+            );
         }
 
         archivo.setEliminado(false);
@@ -249,7 +251,7 @@ public class SolicitudRestauracionService {
                         "Solicitud no encontrada en el proyecto"));
     }
 
-    private void validarPeriodoDeGracia(ArchivoProyecto archivo) {
+    private void validarPeriodoDeGracia(Archivo archivo) {
         Instant eliminadoEn = archivo.getEliminadoEn();
 
         if (!archivo.isEliminado() || eliminadoEn == null) {

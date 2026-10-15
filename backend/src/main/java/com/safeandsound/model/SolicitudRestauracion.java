@@ -14,7 +14,7 @@ public class SolicitudRestauracion {
     // Archivo concreto que se quiere restaurar
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "archivo_id", nullable = false)
-    private ArchivoProyecto archivo;
+    private Archivo archivo;
 
     // Proyecto al que pertenece el archivo
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -65,11 +65,11 @@ public class SolicitudRestauracion {
         return id;
     }
 
-    public ArchivoProyecto getArchivo() {
+    public Archivo getArchivo() {
         return archivo;
     }
 
-    public void setArchivo(ArchivoProyecto archivo) {
+    public void setArchivo(Archivo archivo) {
         this.archivo = archivo;
     }
 

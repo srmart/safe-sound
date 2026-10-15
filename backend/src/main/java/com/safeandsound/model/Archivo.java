@@ -2,6 +2,7 @@ package com.safeandsound.model;
 
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -35,6 +36,12 @@ public class Archivo {
     @Column(name = "fecha_subida", nullable = false)
     private OffsetDateTime fechaSubida;
 
+    @Column(nullable = false)
+    private boolean eliminado = false;
+
+    @Column(name = "eliminado_en")
+    private Instant eliminadoEn;
+
     @PrePersist
     protected void prePersist() {
         if (fechaSubida == null) {
@@ -64,4 +71,20 @@ public class Archivo {
 
     public OffsetDateTime getFechaSubida() { return fechaSubida; }
     public void setFechaSubida(OffsetDateTime fechaSubida) { this.fechaSubida = fechaSubida; }
+
+    public boolean isEliminado() {
+        return eliminado;
+    }
+
+    public void setEliminado(boolean eliminado) {
+        this.eliminado = eliminado;
+    }
+
+    public Instant getEliminadoEn() {
+        return eliminadoEn;
+    }
+
+    public void setEliminadoEn(Instant eliminadoEn) {
+        this.eliminadoEn = eliminadoEn;
+    }
 }

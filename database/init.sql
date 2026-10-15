@@ -67,95 +67,6 @@ CONSTRAINT chk_rol
 
 );
 
-
-
-CREATE TABLE IF NOT EXISTS archivos_proyecto (
-id BIGSERIAL PRIMARY KEY,
-proyecto_id BIGINT NOT NULL,
-usuario_id BIGINT NOT NULL,
-nombre VARCHAR(255) NOT NULL,
-ruta VARCHAR(255) NOT NULL,
-tamano BIGINT NOT NULL,
-fecha_subida DATE NOT NULL,
-
-eliminado BOOLEAN NOT NULL DEFAULT FALSE,
-eliminado_en TIMESTAMP WITH TIME ZONE,
-
-CONSTRAINT fk_archivo_proyecto
-    FOREIGN KEY (proyecto_id)
-    REFERENCES proyectos(id)
-    ON DELETE CASCADE,
-
-CONSTRAINT fk_archivo_usuario
-    FOREIGN KEY (usuario_id)
-    REFERENCES usuarios(id)
-    ON DELETE CASCADE
-
-);
-
-
-ALTER TABLE archivos_proyecto
-ADD COLUMN IF NOT EXISTS eliminado BOOLEAN NOT NULL DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS eliminado_en TIMESTAMP WITH TIME ZONE;
-
-
-CREATE INDEX IF NOT EXISTS idx_archivos_proyecto_eliminados
-ON archivos_proyecto (eliminado, eliminado_en);
-
-
-
-CREATE TABLE IF NOT EXISTS solicitudes_restauracion (
-id BIGSERIAL PRIMARY KEY,
-
-archivo_id BIGINT NOT NULL,
-proyecto_id BIGINT NOT NULL,
-solicitante_id BIGINT NOT NULL,
-aprobador_id BIGINT,
-
-estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
-
-creada_en TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-aprobada_en TIMESTAMP WITH TIME ZONE,
-vence_en TIMESTAMP WITH TIME ZONE,
-usada_en TIMESTAMP WITH TIME ZONE,
-
-CONSTRAINT fk_solicitud_restauracion_archivo
-    FOREIGN KEY (archivo_id)
-    REFERENCES archivos_proyecto(id)
-    ON DELETE CASCADE,
-
-CONSTRAINT fk_solicitud_restauracion_proyecto
-    FOREIGN KEY (proyecto_id)
-    REFERENCES proyectos(id)
-    ON DELETE CASCADE,
-
-CONSTRAINT fk_solicitud_restauracion_solicitante
-    FOREIGN KEY (solicitante_id)
-    REFERENCES usuarios(id),
-
-CONSTRAINT fk_solicitud_restauracion_aprobador
-    FOREIGN KEY (aprobador_id)
-    REFERENCES usuarios(id),
-
-CONSTRAINT chk_estado_solicitud_restauracion
-    CHECK (estado IN (
-        'PENDIENTE',
-        'APROBADA',
-        'RECHAZADA',
-        'UTILIZADA',
-        'VENCIDA'
-    ))
-
-);
-
-CREATE INDEX IF NOT EXISTS idx_solicitudes_restauracion_proyecto_estado
-ON solicitudes_restauracion (proyecto_id, estado);
-
-CREATE INDEX IF NOT EXISTS idx_solicitudes_restauracion_archivo
-ON solicitudes_restauracion (archivo_id);
-
-
-
 CREATE TABLE IF NOT EXISTS registros_auditoria (
 id BIGSERIAL PRIMARY KEY,
 usuario_id BIGINT NOT NULL,
@@ -208,6 +119,8 @@ nombre_almacenado UUID NOT NULL UNIQUE,
 tipo_mime VARCHAR(100) NOT NULL,
 tamanio BIGINT NOT NULL CHECK (tamanio >= 0),
 fecha_subida TIMESTAMP WITH TIME ZONE NOT NULL,
+eliminado BOOLEAN NOT NULL DEFAULT FALSE,
+eliminado_en TIMESTAMP WITH TIME ZONE,
 
 CONSTRAINT fk_archivo_proyecto_archivos
     FOREIGN KEY (proyecto_id)
@@ -219,8 +132,66 @@ CONSTRAINT fk_archivo_usuario_archivos
 
 );
 
+ALTER TABLE archivos
+    ADD COLUMN IF NOT EXISTS eliminado BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS eliminado_en TIMESTAMP WITH TIME ZONE;
+
+
 CREATE INDEX IF NOT EXISTS idx_archivos_proyecto
 ON archivos (proyecto_id);
 
 CREATE INDEX IF NOT EXISTS idx_archivos_proyecto_usuario
 ON archivos (proyecto_id, subido_por);
+
+CREATE INDEX IF NOT EXISTS idx_archivos_eliminados
+ON archivos (eliminado, eliminado_en);
+
+CREATE TABLE IF NOT EXISTS solicitudes_restauracion (
+                                                        id BIGSERIAL PRIMARY KEY,
+
+                                                        archivo_id BIGINT NOT NULL,
+                                                        proyecto_id BIGINT NOT NULL,
+                                                        solicitante_id BIGINT NOT NULL,
+                                                        aprobador_id BIGINT,
+
+                                                        estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
+
+    creada_en TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aprobada_en TIMESTAMP WITH TIME ZONE,
+    vence_en TIMESTAMP WITH TIME ZONE,
+    usada_en TIMESTAMP WITH TIME ZONE,
+
+                           CONSTRAINT fk_solicitud_restauracion_archivo
+                           FOREIGN KEY (archivo_id)
+    REFERENCES archivos(id)
+                       ON DELETE CASCADE,
+
+    CONSTRAINT fk_solicitud_restauracion_proyecto
+    FOREIGN KEY (proyecto_id)
+    REFERENCES proyectos(id)
+                       ON DELETE CASCADE,
+
+    CONSTRAINT fk_solicitud_restauracion_solicitante
+    FOREIGN KEY (solicitante_id)
+    REFERENCES usuarios(id),
+
+    CONSTRAINT fk_solicitud_restauracion_aprobador
+    FOREIGN KEY (aprobador_id)
+    REFERENCES usuarios(id),
+
+    CONSTRAINT chk_estado_solicitud_restauracion
+    CHECK (estado IN (
+           'PENDIENTE',
+           'APROBADA',
+           'RECHAZADA',
+           'UTILIZADA',
+           'VENCIDA'
+                     ))
+
+    );
+
+CREATE INDEX IF NOT EXISTS idx_solicitudes_restauracion_proyecto_estado
+    ON solicitudes_restauracion (proyecto_id, estado);
+
+CREATE INDEX IF NOT EXISTS idx_solicitudes_restauracion_archivo
+    ON solicitudes_restauracion (archivo_id);

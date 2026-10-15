@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 import java.util.List;
@@ -143,7 +144,7 @@ public class ArchivoService {
                 Operacion.VER_ARCHIVOS
         );
 
-        return archivoRepository.findByProyectoId(proyectoId);
+        return archivoRepository.findByProyectoIdAndEliminadoFalse(proyectoId);
     }
 
 
@@ -161,7 +162,7 @@ public class ArchivoService {
         );
 
         return archivoRepository
-                .findByIdAndProyectoId(archivoId, proyectoId)
+                .findByIdAndProyectoIdAndEliminadoFalse(archivoId, proyectoId)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -185,7 +186,7 @@ public class ArchivoService {
         );
 
         Archivo archivo = archivoRepository
-                .findByIdAndProyectoId(archivoId, proyectoId)
+                .findByIdAndProyectoIdAndEliminadoFalse(archivoId, proyectoId)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -215,7 +216,7 @@ public class ArchivoService {
 
         // 2. Buscar el archivo dentro del proyecto
         Archivo archivo = archivoRepository
-                .findByIdAndProyectoId(archivoId, proyectoId)
+                .findByIdAndProyectoIdAndEliminadoFalse(archivoId, proyectoId)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -236,11 +237,12 @@ public class ArchivoService {
             );
         }
 
-        // 5. Eliminar el archivo físico
-        archivoStorageService.eliminar(archivo.getNombreAlmacenado());
+        // 5. Marcar el archivo como eliminado
+        archivo.setEliminado(true);
+        archivo.setEliminadoEn(Instant.now());
 
-        // 6. Eliminar los metadatos de PostgreSQL
-        archivoRepository.delete(archivo);
+        // 6. Guardar el nuevo estado en PostgreSQL
+        archivoRepository.save(archivo);
     }
 
 }

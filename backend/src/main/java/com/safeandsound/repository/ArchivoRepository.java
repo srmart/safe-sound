@@ -16,4 +16,19 @@ public interface ArchivoRepository extends JpaRepository<Archivo, Long> {
             Long archivoId,
             Long proyectoId
     );
+
+    // Listar únicamente archivos activos
+    List<Archivo> findByProyectoIdAndEliminadoFalse(Long proyectoId);
+
+    // Buscar un archivo activo dentro de un proyecto
+    Optional<Archivo> findByIdAndProyectoIdAndEliminadoFalse(
+            Long archivoId,
+            Long proyectoId
+    );
+
+    // Buscar un archivo eliminado para su restauración
+    Optional<Archivo> findByIdAndProyectoIdAndEliminadoTrue(
+            Long archivoId,
+            Long proyectoId
+    );
 }
