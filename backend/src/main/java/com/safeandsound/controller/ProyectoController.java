@@ -2,14 +2,15 @@ package com.safeandsound.controller;
 
 import com.safeandsound.dto.AuditoriaResponse;
 import com.safeandsound.dto.ProyectoListadoDTO;
+import com.safeandsound.dto.ProyectoResponse;
 import com.safeandsound.model.Operacion;
 import com.safeandsound.model.Proyecto;
-import com.safeandsound.dto.ProyectoResponse;
 import com.safeandsound.model.RegistroAuditoria;
 import com.safeandsound.model.Rol;
 import com.safeandsound.service.AuditService;
 import com.safeandsound.service.AutorizacionService;
 import com.safeandsound.service.ProyectoService;
+import com.safeandsound.service.UsuarioService; // <-- NUEVA IMPORTACIÓN
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,16 +26,19 @@ public class ProyectoController {
 
     private final ProyectoService proyectoService;
     private final AutorizacionService autorizacionService;
-    private final AuditService auditService; // <-- AGREGADO PARA RS19
+    private final AuditService auditService;
+    private final UsuarioService usuarioService; // <-- NUEVO: Inyección para reautenticación
 
     public ProyectoController(
             ProyectoService proyectoService,
             AutorizacionService autorizacionService,
-            AuditService auditService // <-- AGREGADO PARA RS19
+            AuditService auditService,
+            UsuarioService usuarioService // <-- NUEVO
     ) {
         this.proyectoService = proyectoService;
         this.autorizacionService = autorizacionService;
         this.auditService = auditService;
+        this.usuarioService = usuarioService; // <-- NUEVO
     }
 
     @PostMapping
@@ -64,30 +68,23 @@ public class ProyectoController {
             @PathVariable Long proyectoId,
             @RequestParam String nombre,
             @RequestParam(required = false) String descripcion,
+            @RequestParam String passwordConfirmacion, // <-- NUEVO: Reautenticación
             Authentication authentication
     ) {
         Long usuarioId = (Long) authentication.getPrincipal();
 
-        autorizacionService.verificarPermiso(
-                usuarioId,
-                proyectoId,
-                Operacion.MODIFICAR_PROYECTO
-        );
+        // 1. Reautenticación (valida la contraseña antes de permitir la acción)
+        usuarioService.verificarPassword(usuarioId, passwordConfirmacion.toCharArray());
 
-        // RS13: El servicio verifica que el proyecto esté activo.
-        Proyecto proyecto = proyectoService.modificarProyecto(
-                proyectoId,
-                nombre,
-                descripcion
-        );
+        // 2. Autorización
+        autorizacionService.verificarPermiso(usuarioId, proyectoId, Operacion.MODIFICAR_PROYECTO);
 
-        // RS19: Registrar la acción después de modificar el proyecto.
-        auditService.registrarAccionAdministrativa(
-                usuarioId,
-                proyectoId,
-                "MODIFICAR_PROYECTO",
-                "Nombre: " + nombre + ", Descripción: " + descripcion
-        );
+        // 3. Ejecución (RS13: El servicio verifica que el proyecto esté activo)
+        Proyecto proyecto = proyectoService.modificarProyecto(proyectoId, nombre, descripcion);
+
+        // 4. Auditoría (RS19)
+        auditService.registrarAccionAdministrativa(usuarioId, proyectoId, "MODIFICAR_PROYECTO", 
+                "Nombre: " + nombre + ", Descripción: " + descripcion);
 
         return ResponseEntity.ok(ProyectoResponse.desde(proyecto));
     }
@@ -95,14 +92,21 @@ public class ProyectoController {
     @DeleteMapping("/{proyectoId}")
     public ResponseEntity<Void> archivarProyecto(
             @PathVariable Long proyectoId,
+            @RequestParam String passwordConfirmacion, // <-- NUEVO: Reautenticación
             Authentication authentication
     ) {
         Long usuarioId = (Long) authentication.getPrincipal();
+        
+        // 1. Reautenticación
+        usuarioService.verificarPassword(usuarioId, passwordConfirmacion.toCharArray());
+
+        // 2. Autorización
         autorizacionService.verificarPermiso(usuarioId, proyectoId, Operacion.ARCHIVAR_PROYECTO);
         
-        // RS19: Auditoría de acción administrativa de alto riesgo
+        // 3. Auditoría (RS19)
         auditService.registrarAccionAdministrativa(usuarioId, proyectoId, "ARCHIVAR_PROYECTO", "Proyecto archivado");
 
+        // 4. Ejecución
         proyectoService.archivarProyecto(proyectoId);
         return ResponseEntity.noContent().build();
     }
@@ -112,15 +116,22 @@ public class ProyectoController {
             @PathVariable Long proyectoId,
             @PathVariable Long usuarioId,
             @RequestParam Rol rol,
+            @RequestParam String passwordConfirmacion, // <-- NUEVO: Reautenticación
             Authentication authentication
     ) {
         Long usuarioActualId = (Long) authentication.getPrincipal();
+        
+        // 1. Reautenticación
+        usuarioService.verificarPassword(usuarioActualId, passwordConfirmacion.toCharArray());
+
+        // 2. Autorización
         autorizacionService.verificarPermiso(usuarioActualId, proyectoId, Operacion.MODIFICAR_ROLES);
         
-        // RS19: Auditoría de acción administrativa
+        // 3. Auditoría (RS19)
         auditService.registrarAccionAdministrativa(usuarioActualId, proyectoId, "AGREGAR_MIEMBRO", 
                 "Usuario ID: " + usuarioId + ", Rol asignado: " + rol);
 
+        // 4. Ejecución
         proyectoService.agregarMiembro(proyectoId, usuarioId, rol);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -130,15 +141,22 @@ public class ProyectoController {
             @PathVariable Long proyectoId,
             @PathVariable Long usuarioId,
             @RequestParam Rol rol,
+            @RequestParam String passwordConfirmacion, // <-- NUEVO: Reautenticación
             Authentication authentication
     ) {
         Long usuarioActualId = (Long) authentication.getPrincipal();
+        
+        // 1. Reautenticación
+        usuarioService.verificarPassword(usuarioActualId, passwordConfirmacion.toCharArray());
+
+        // 2. Autorización
         autorizacionService.verificarPermiso(usuarioActualId, proyectoId, Operacion.MODIFICAR_ROLES);
         
-        // RS19: Auditoría de acción administrativa
+        // 3. Auditoría (RS19)
         auditService.registrarAccionAdministrativa(usuarioActualId, proyectoId, "MODIFICAR_ROL", 
                 "Usuario ID: " + usuarioId + ", Nuevo rol: " + rol);
 
+        // 4. Ejecución
         proyectoService.modificarRol(proyectoId, usuarioId, rol);
         return ResponseEntity.noContent().build();
     }

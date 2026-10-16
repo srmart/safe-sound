@@ -15,9 +15,6 @@ import com.safeandsound.dto.ActualizarPreferenciasRequest;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
-
-
-
 @Service
 public class UsuarioService {
 
@@ -34,9 +31,7 @@ public class UsuarioService {
     }
 
     public Usuario registrar(RegistroRequest request) {
-
         char[] password = request.getPassword();
-
         try {
             String email = request.getEmail();
             String username = request.getUsername();
@@ -57,28 +52,25 @@ public class UsuarioService {
             usuario.setPasswordHash(passwordHash);
 
             return usuarioRepository.save(usuario);
-
-            //limpiar el array de la contraseña
         } finally {
+            // limpiar el array de la contraseña
             Arrays.fill(password, '\0');
         }
     }
 
     public Usuario login(LoginRequest request) {
-
         char[] password = request.getPassword();
-
         try {
-            //buscar por email
-            Usuario usuario = usuarioRepository.findByEmail(request.getEmail()).orElseThrow(CredencialesInvalidasException::new);
+            // buscar por email
+            Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+                    .orElseThrow(CredencialesInvalidasException::new);
 
-            //match contraseña
+            // match contraseña
             if (!passwordHasher.matches(password, usuario.getPasswordHash())) {
                 throw new CredencialesInvalidasException();
             }
 
             return usuario;
-
         } finally {
             // limpia la contraseña ingresada una vez finalizada la autenticación.
             Arrays.fill(password, '\0');
@@ -111,6 +103,24 @@ public class UsuarioService {
         usuario.setModoOscuro(request.getModoOscuro());
 
         return usuarioRepository.save(usuario);
+    }
+
+    /**
+     * Verifica la contraseña de un usuario para operaciones de alto riesgo (Reautenticación).
+     * Mantiene las prácticas de seguridad de manejo de memoria con char[].
+     */
+    public void verificarPassword(Long usuarioId, char[] passwordIngresada) {
+        Usuario usuario = buscarPorId(usuarioId);
+        try {
+            if (!passwordHasher.matches(passwordIngresada, usuario.getPasswordHash())) {
+                throw new CredencialesInvalidasException();
+            }
+        } finally {
+            // Limpia la contraseña ingresada de la memoria inmediatamente después de usarla
+            if (passwordIngresada != null) {
+                Arrays.fill(passwordIngresada, '\0');
+            }
+        }
     }
 
     private String normalizarFotoPerfil(String fotoPerfil) {

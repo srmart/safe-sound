@@ -3,9 +3,13 @@ package com.safeandsound.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.annotation.security.PermitAll; // <-- AGREGADO PARA RS20
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
+
 import com.safeandsound.dto.RegistroRequest;
+import com.safeandsound.dto.ReautenticacionRequest;
 import com.safeandsound.service.UsuarioService;
 import com.safeandsound.dto.LoginRequest;
 import com.safeandsound.dto.LoginResponse;
@@ -16,7 +20,7 @@ import com.safeandsound.security.JwtService;
 
 @RestController
 @RequestMapping("/auth")
-@PermitAll // <-- AGREGADO PARA RS20: Declara explícitamente que TODOS los endpoints de este controller son públicos
+@PermitAll // Declara explícitamente que TODOS los endpoints de este controller son públicos por defecto
 public class AuthController {
 
     private final UsuarioService usuarioService;
@@ -26,21 +30,17 @@ public class AuthController {
     public AuthController(UsuarioService usuarioService, JwtService jwtService, RefreshTokenService refreshTokenService) {
         this.usuarioService = usuarioService;
         this.jwtService = jwtService;
-        this.refreshTokenService= refreshTokenService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<Void> registrar(@Valid @RequestBody RegistroRequest request) {
-
         usuarioService.registrar(request);
-
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request
-    ) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         Usuario usuario = usuarioService.login(request);
 
         String accessToken = jwtService.generateAccessToken(usuario);
@@ -48,20 +48,13 @@ public class AuthController {
 
         refreshTokenService.guardar(usuario, refreshToken);
 
-        LoginResponse response = new LoginResponse(
-                accessToken,
-                refreshToken
-        );
-
+        LoginResponse response = new LoginResponse(accessToken, refreshToken);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<LoginResponse> refresh(
-            @Valid @RequestBody RefreshTokenRequest request
-    ) {
+    public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         String oldRefreshToken = request.getRefreshToken();
-
         Long usuarioId = jwtService.validateRefreshToken(oldRefreshToken);
 
         refreshTokenService.validarYRevocar(oldRefreshToken);
@@ -73,19 +66,31 @@ public class AuthController {
 
         refreshTokenService.guardar(usuario, newRefreshToken);
 
-        return ResponseEntity.ok(
-                new LoginResponse(accessToken, newRefreshToken)
-        );
+        return ResponseEntity.ok(new LoginResponse(accessToken, newRefreshToken));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(
-            @Valid @RequestBody RefreshTokenRequest request
-    ) {
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
         jwtService.validateRefreshToken(request.getRefreshToken());
-
         refreshTokenService.revocar(request.getRefreshToken());
-
         return ResponseEntity.noContent().build();
+    }
+
+    // <-- NUEVO ENDPOINT PARA RS19: Reautenticación para operaciones de alto riesgo
+    @PostMapping("/reautenticar")
+    @PreAuthorize("isAuthenticated()") // Sobrescribe el @PermitAll de la clase, exigiendo un JWT válido
+    public ResponseEntity<Void> reautenticar(
+            @Valid @RequestBody ReautenticacionRequest request,
+            Authentication authentication
+    ) {
+        Long usuarioId = (Long) authentication.getPrincipal();
+        try {
+            // Llama al método seguro que creamos en UsuarioService
+            usuarioService.verificarPassword(usuarioId, request.getPassword());
+            return ResponseEntity.ok().build();
+        } finally {
+            // Limpieza de memoria por seguridad, igual que en el login
+            request.clearPassword();
+        }
     }
 }
