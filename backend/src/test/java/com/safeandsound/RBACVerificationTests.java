@@ -1,4 +1,3 @@
-
 package com.safeandsound;
 
 import com.safeandsound.model.Operacion;
@@ -28,21 +27,54 @@ class RBACVerificationTests {
                 Arguments.of(Rol.OWNER, Operacion.MODIFICAR_PROYECTO, true),
                 Arguments.of(Rol.OWNER, Operacion.ARCHIVAR_PROYECTO, true),
                 Arguments.of(Rol.OWNER, Operacion.VER_MIEMBROS, true),
+                Arguments.of(Rol.OWNER, Operacion.AGREGAR_MIEMBRO, true),
+                Arguments.of(Rol.OWNER, Operacion.ELIMINAR_MIEMBRO, true),
                 Arguments.of(Rol.OWNER, Operacion.MODIFICAR_ROLES, true),
+                Arguments.of(Rol.OWNER, Operacion.VER_ARCHIVOS, true),
+                Arguments.of(Rol.OWNER, Operacion.SUBIR_ARCHIVO, true),
+                Arguments.of(Rol.OWNER, Operacion.DESCARGAR_ARCHIVO, true),
+                Arguments.of(Rol.OWNER, Operacion.ELIMINAR_ARCHIVO, true),
+                Arguments.of(Rol.OWNER, Operacion.SOLICITAR_RESTAURACION, false),
+                Arguments.of(Rol.OWNER, Operacion.APROBAR_SOLICITUD_RESTAURACION, true),
+                Arguments.of(Rol.OWNER, Operacion.RECHAZAR_SOLICITUD_RESTAURACION, true),
+                Arguments.of(Rol.OWNER, Operacion.RESTAURAR_ARCHIVO, false),
+                Arguments.of(Rol.OWNER, Operacion.VER_AUDITORIA, true),
 
                 // COLLABORATOR
                 Arguments.of(Rol.COLLABORATOR, Operacion.VER_PROYECTO, true),
                 Arguments.of(Rol.COLLABORATOR, Operacion.MODIFICAR_PROYECTO, false),
                 Arguments.of(Rol.COLLABORATOR, Operacion.ARCHIVAR_PROYECTO, false),
                 Arguments.of(Rol.COLLABORATOR, Operacion.VER_MIEMBROS, true),
+                Arguments.of(Rol.COLLABORATOR, Operacion.AGREGAR_MIEMBRO, false),
+                Arguments.of(Rol.COLLABORATOR, Operacion.ELIMINAR_MIEMBRO, false),
                 Arguments.of(Rol.COLLABORATOR, Operacion.MODIFICAR_ROLES, false),
+                Arguments.of(Rol.COLLABORATOR, Operacion.VER_ARCHIVOS, true),
+                Arguments.of(Rol.COLLABORATOR, Operacion.SUBIR_ARCHIVO, true),
+                Arguments.of(Rol.COLLABORATOR, Operacion.DESCARGAR_ARCHIVO, true),
+                Arguments.of(Rol.COLLABORATOR, Operacion.ELIMINAR_ARCHIVO, true),
+                Arguments.of(Rol.COLLABORATOR, Operacion.SOLICITAR_RESTAURACION, true),
+                Arguments.of(Rol.COLLABORATOR, Operacion.APROBAR_SOLICITUD_RESTAURACION, false),
+                Arguments.of(Rol.COLLABORATOR, Operacion.RECHAZAR_SOLICITUD_RESTAURACION, false),
+                Arguments.of(Rol.COLLABORATOR, Operacion.RESTAURAR_ARCHIVO, false),
+                Arguments.of(Rol.COLLABORATOR, Operacion.VER_AUDITORIA, false),
 
                 // VIEWER
                 Arguments.of(Rol.VIEWER, Operacion.VER_PROYECTO, true),
                 Arguments.of(Rol.VIEWER, Operacion.MODIFICAR_PROYECTO, false),
                 Arguments.of(Rol.VIEWER, Operacion.ARCHIVAR_PROYECTO, false),
                 Arguments.of(Rol.VIEWER, Operacion.VER_MIEMBROS, true),
-                Arguments.of(Rol.VIEWER, Operacion.MODIFICAR_ROLES, false)
+                Arguments.of(Rol.VIEWER, Operacion.AGREGAR_MIEMBRO, false),
+                Arguments.of(Rol.VIEWER, Operacion.ELIMINAR_MIEMBRO, false),
+                Arguments.of(Rol.VIEWER, Operacion.MODIFICAR_ROLES, false),
+                Arguments.of(Rol.VIEWER, Operacion.VER_ARCHIVOS, true),
+                Arguments.of(Rol.VIEWER, Operacion.SUBIR_ARCHIVO, false),
+                Arguments.of(Rol.VIEWER, Operacion.DESCARGAR_ARCHIVO, true),
+                Arguments.of(Rol.VIEWER, Operacion.ELIMINAR_ARCHIVO, false),
+                Arguments.of(Rol.VIEWER, Operacion.SOLICITAR_RESTAURACION, false),
+                Arguments.of(Rol.VIEWER, Operacion.APROBAR_SOLICITUD_RESTAURACION, false),
+                Arguments.of(Rol.VIEWER, Operacion.RECHAZAR_SOLICITUD_RESTAURACION, false),
+                Arguments.of(Rol.VIEWER, Operacion.RESTAURAR_ARCHIVO, false),
+                Arguments.of(Rol.VIEWER, Operacion.VER_AUDITORIA, false)
         );
     }
 
@@ -63,7 +95,6 @@ class RBACVerificationTests {
                 new AutorizacionService(repository);
 
         ProyectoMiembro miembro = mock(ProyectoMiembro.class);
-
         when(miembro.getRol()).thenReturn(rol);
 
         when(repository.findByProyectoIdAndUsuarioId(

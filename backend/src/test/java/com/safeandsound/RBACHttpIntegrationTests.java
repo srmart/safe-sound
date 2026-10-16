@@ -486,7 +486,134 @@ class RBACHttpIntegrationTests {
     }
 
 
+    @Test
+    void ownerNoPuedeModificarProyectoAjenoPorId() throws Exception {
+        Usuario ownerA = crearUsuario("ownerA");
+        Usuario ownerB = crearUsuario("ownerB");
+
+        Proyecto proyectoA = crearProyecto(ownerA);
+        Proyecto proyectoB = crearProyecto(ownerB);
+
+        asignarRol(proyectoA, ownerA, Rol.OWNER);
+        asignarRol(proyectoB, ownerB, Rol.OWNER);
+
+        String token = jwtService.generateAccessToken(ownerA);
+
+        mockMvc.perform(put("/proyectos/{id}", proyectoB.getId())
+                        .header("Authorization", "Bearer " + token)
+                        .param("nombre", "Proyecto comprometido"))
+                .andExpect(status().isForbidden());
+
+        Proyecto proyectoSinCambios = proyectoRepository
+                .findById(proyectoB.getId())
+                .orElseThrow();
+
+        assertTrue(proyectoSinCambios.isActivo());
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Proyecto RBAC",
+                proyectoSinCambios.getNombre()
+        );
+    }
+
+    @Test
+    void viewerNoPuedeAgregarMiembroConRolOwnerManipulandoParametro()
+            throws Exception {
+        Usuario owner = crearUsuario("owner");
+        Usuario viewer = crearUsuario("viewer");
+        Usuario nuevo = crearUsuario("nuevo");
+
+        Proyecto proyecto = crearProyecto(owner);
+
+        asignarRol(proyecto, owner, Rol.OWNER);
+        asignarRol(proyecto, viewer, Rol.VIEWER);
+
+        String token = jwtService.generateAccessToken(viewer);
+
+        mockMvc.perform(post(
+                        "/proyectos/{proyectoId}/miembros/{usuarioId}",
+                        proyecto.getId(), nuevo.getId()
+                )
+                        .header("Authorization", "Bearer " + token)
+                        .param("rol", "OWNER"))
+                .andExpect(status().isForbidden());
+
+        assertFalse(
+                proyectoMiembroRepository.existsByProyectoIdAndUsuarioId(
+                        proyecto.getId(), nuevo.getId()
+                )
+        );
+    }
+
+    @Test
+    void ownerNoPuedeModificarRolDeMiembroDeOtroProyecto()
+            throws Exception {
+        Usuario ownerA = crearUsuario("ownerA");
+        Usuario ownerB = crearUsuario("ownerB");
+        Usuario miembroB = crearUsuario("miembroB");
+
+        Proyecto proyectoA = crearProyecto(ownerA);
+        Proyecto proyectoB = crearProyecto(ownerB);
+
+        asignarRol(proyectoA, ownerA, Rol.OWNER);
+        asignarRol(proyectoB, ownerB, Rol.OWNER);
+        asignarRol(proyectoB, miembroB, Rol.VIEWER);
+
+        String token = jwtService.generateAccessToken(ownerA);
+
+        mockMvc.perform(put(
+                        "/proyectos/{proyectoId}/miembros/{usuarioId}/rol",
+                        proyectoB.getId(), miembroB.getId()
+                )
+                        .header("Authorization", "Bearer " + token)
+                        .param("rol", "COLLABORATOR"))
+                .andExpect(status().isForbidden());
+
+        assertTrue(
+                proyectoMiembroRepository.existsByProyectoIdAndUsuarioIdAndRol(
+                        proyectoB.getId(), miembroB.getId(), Rol.VIEWER
+                )
+        );
+    }
+
+    @Test
+    void ownerPuedeConsultarAuditoriaDeSuProyecto() throws Exception {
+        Usuario owner = crearUsuario("auditoria_owner");
+        Proyecto proyecto = crearProyecto(owner);
+        asignarRol(proyecto, owner, Rol.OWNER);
+
+        String token = jwtService.generateAccessToken(owner);
 
 
+        mockMvc.perform(get("/proyectos/" + proyecto.getId() + "/auditoria")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void viewerNoPuedeConsultarAuditoriaDelProyecto() throws Exception {
+        Usuario owner = crearUsuario("auditoria_view_owner");
+        Usuario viewer = crearUsuario("auditoria_viewer");
+        Proyecto proyecto = crearProyecto(owner);
+        asignarRol(proyecto, viewer, Rol.VIEWER);
+
+        String token = jwtService.generateAccessToken(viewer);
+
+        mockMvc.perform(get("/proyectos/" + proyecto.getId() + "/auditoria")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void usuarioExternoNoPuedeConsultarAuditoriaDeOtroProyecto() throws Exception {
+        Usuario owner = crearUsuario("auditoria_ext_owner");
+        Usuario externo = crearUsuario("auditoria_externo");
+        Proyecto proyecto = crearProyecto(owner);
+
+        String token = jwtService.generateAccessToken(externo);
+
+        mockMvc.perform(get("/proyectos/" + proyecto.getId() + "/auditoria")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
 
 }
