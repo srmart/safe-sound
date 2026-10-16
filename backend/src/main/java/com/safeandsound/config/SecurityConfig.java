@@ -58,7 +58,10 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/proyectos").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/proyectos/{proyectoId}").authenticated()
                                 .requestMatchers(HttpMethod.PUT, "/proyectos/{proyectoId}").authenticated()
+                                .requestMatchers(HttpMethod.PUT, "/proyectos/{proyectoId}/archivar").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/proyectos/{proyectoId}").authenticated()
+
+
 
                                 // Gestión de miembros
                                 .requestMatchers(HttpMethod.POST, "/proyectos/{proyectoId}/miembros/{usuarioId}").authenticated()
@@ -87,6 +90,7 @@ public class SecurityConfig {
 
                                 // RS30: Cualquier endpoint no declarado queda denegado.
                                 .anyRequest().denyAll()
+
                 )
                 .addFilterBefore(
                         jwtAuthenticationFilter,

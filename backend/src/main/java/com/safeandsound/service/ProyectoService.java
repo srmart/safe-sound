@@ -76,8 +76,14 @@ public class ProyectoService {
             );
         }
 
-        proyecto.setNombre(nombre);
-        proyecto.setDescripcion(descripcion);
+        // RS16
+        if (nombre != null) {
+            proyecto.setNombre(nombre);
+        }
+
+        if (descripcion != null) {
+            proyecto.setDescripcion(descripcion);
+        }
 
         return proyectoRepository.save(proyecto);
     }
@@ -159,4 +165,5 @@ public class ProyectoService {
                 activo
         );
     }
+
 }

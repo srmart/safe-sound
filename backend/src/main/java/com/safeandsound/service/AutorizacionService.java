@@ -90,6 +90,13 @@ public class AutorizacionService {
 
             // RS20 / RS6: Cualquier operación no listada explícitamente se deniega por defecto.
             default -> false;
+
+            //RS16
+            case MODIFICAR_NOMBRE_PROYECTO ->
+                    rol == Rol.OWNER;
+
+            case MODIFICAR_DESCRIPCION_PROYECTO ->
+                    rol == Rol.OWNER || rol == Rol.COLLABORATOR;
         };
     }
 }
