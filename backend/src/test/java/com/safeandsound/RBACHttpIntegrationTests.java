@@ -9,6 +9,7 @@ import com.safeandsound.repository.ProyectoMiembroRepository;
 import com.safeandsound.repository.ProyectoRepository;
 import com.safeandsound.repository.UsuarioRepository;
 import com.safeandsound.security.JwtService;
+import com.safeandsound.security.PasswordHasher;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,21 +20,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 class RBACHttpIntegrationTests {
+
+    private static final String PASSWORD_TEST = "PasswordTest!2026";
 
     @Autowired
     private MockMvc mockMvc;
@@ -50,13 +52,18 @@ class RBACHttpIntegrationTests {
     @Autowired
     private ProyectoMiembroRepository proyectoMiembroRepository;
 
+    @Autowired
+    private PasswordHasher passwordHasher;
+
     private Usuario crearUsuario(String prefijo) {
         String id = UUID.randomUUID().toString().substring(0, 8);
 
         Usuario usuario = new Usuario();
         usuario.setUsername(prefijo + "-" + id);
         usuario.setEmail(prefijo + "-" + id + "@test.com");
-        usuario.setPasswordHash("hash-de-prueba");
+        usuario.setPasswordHash(
+                passwordHasher.hash(PASSWORD_TEST.toCharArray())
+        );
 
         return usuarioRepository.saveAndFlush(usuario);
     }
@@ -94,8 +101,16 @@ class RBACHttpIntegrationTests {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Proyecto actualizado"))
+                        .param("nombre", "Proyecto actualizado")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isOk());
+
+        assertEquals(
+                "Proyecto actualizado",
+                proyectoRepository.findById(proyecto.getId())
+                        .orElseThrow()
+                        .getNombre()
+        );
     }
 
     @Test
@@ -115,7 +130,8 @@ class RBACHttpIntegrationTests {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Cambio no autorizado"))
+                        .param("nombre", "Cambio no autorizado")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
     }
 
@@ -136,7 +152,8 @@ class RBACHttpIntegrationTests {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Cambio no autorizado"))
+                        .param("nombre", "Cambio no autorizado")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
     }
 
@@ -156,7 +173,8 @@ class RBACHttpIntegrationTests {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Cambio no autorizado"))
+                        .param("nombre", "Cambio no autorizado")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
     }
 
@@ -175,10 +193,10 @@ class RBACHttpIntegrationTests {
                         .header("Authorization", "Bearer " + token)
                         .param("nombre", "Cambio no autorizado")
                         .param("usuarioId", owner.getId().toString())
-                        .param("rol", "OWNER"))
+                        .param("rol", "OWNER")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
     }
-
 
     @Test
     void ownerPuedeArchivarProyecto() throws Exception {
@@ -189,7 +207,8 @@ class RBACHttpIntegrationTests {
         String token = jwtService.generateAccessToken(owner);
 
         mockMvc.perform(delete("/proyectos/{id}", proyecto.getId())
-                        .header("Authorization", "Bearer " + token))
+                        .header("Authorization", "Bearer " + token)
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isNoContent());
 
         assertFalse(
@@ -211,7 +230,8 @@ class RBACHttpIntegrationTests {
         String token = jwtService.generateAccessToken(collaborator);
 
         mockMvc.perform(delete("/proyectos/{id}", proyecto.getId())
-                        .header("Authorization", "Bearer " + token))
+                        .header("Authorization", "Bearer " + token)
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -233,7 +253,8 @@ class RBACHttpIntegrationTests {
         String token = jwtService.generateAccessToken(viewer);
 
         mockMvc.perform(delete("/proyectos/{id}", proyecto.getId())
-                        .header("Authorization", "Bearer " + token))
+                        .header("Authorization", "Bearer " + token)
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -242,7 +263,6 @@ class RBACHttpIntegrationTests {
                         .isActivo()
         );
     }
-
 
     @Test
     void ownerPuedeAgregarMiembro() throws Exception {
@@ -259,7 +279,8 @@ class RBACHttpIntegrationTests {
                         proyecto.getId(), nuevo.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "VIEWER"))
+                        .param("rol", "VIEWER")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isCreated());
 
         assertTrue(
@@ -286,7 +307,8 @@ class RBACHttpIntegrationTests {
                         proyecto.getId(), nuevo.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "VIEWER"))
+                        .param("rol", "VIEWER")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         assertFalse(
@@ -313,7 +335,8 @@ class RBACHttpIntegrationTests {
                         proyecto.getId(), nuevo.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "VIEWER"))
+                        .param("rol", "VIEWER")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         assertFalse(
@@ -322,7 +345,6 @@ class RBACHttpIntegrationTests {
                 )
         );
     }
-
 
     @Test
     void ownerPuedeModificarRolDeMiembro() throws Exception {
@@ -340,7 +362,8 @@ class RBACHttpIntegrationTests {
                         proyecto.getId(), miembro.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "COLLABORATOR"))
+                        .param("rol", "COLLABORATOR")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isNoContent());
 
         assertTrue(
@@ -368,7 +391,8 @@ class RBACHttpIntegrationTests {
                         proyecto.getId(), miembro.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "OWNER"))
+                        .param("rol", "OWNER")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -396,7 +420,8 @@ class RBACHttpIntegrationTests {
                         proyecto.getId(), miembro.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "OWNER"))
+                        .param("rol", "OWNER")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -405,7 +430,6 @@ class RBACHttpIntegrationTests {
                 )
         );
     }
-
 
     @Test
     void listadoSoloIncluyeProyectosDelUsuarioAutenticado() throws Exception {
@@ -462,7 +486,6 @@ class RBACHttpIntegrationTests {
                 .andExpect(jsonPath("$[?(@.id == " + proyecto.getId() + ")]").doesNotExist());
     }
 
-
     @Test
     void solicitudSinTokenEsRechazada() throws Exception {
         mockMvc.perform(get("/proyectos"))
@@ -485,7 +508,6 @@ class RBACHttpIntegrationTests {
                 .andExpect(status().isUnauthorized());
     }
 
-
     @Test
     void ownerNoPuedeModificarProyectoAjenoPorId() throws Exception {
         Usuario ownerA = crearUsuario("ownerA");
@@ -501,7 +523,8 @@ class RBACHttpIntegrationTests {
 
         mockMvc.perform(put("/proyectos/{id}", proyectoB.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Proyecto comprometido"))
+                        .param("nombre", "Proyecto comprometido")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         Proyecto proyectoSinCambios = proyectoRepository
@@ -509,15 +532,13 @@ class RBACHttpIntegrationTests {
                 .orElseThrow();
 
         assertTrue(proyectoSinCambios.isActivo());
-        org.junit.jupiter.api.Assertions.assertEquals(
-                "Proyecto RBAC",
-                proyectoSinCambios.getNombre()
-        );
+        assertEquals("Proyecto RBAC", proyectoSinCambios.getNombre());
     }
 
     @Test
     void viewerNoPuedeAgregarMiembroConRolOwnerManipulandoParametro()
             throws Exception {
+
         Usuario owner = crearUsuario("owner");
         Usuario viewer = crearUsuario("viewer");
         Usuario nuevo = crearUsuario("nuevo");
@@ -534,7 +555,8 @@ class RBACHttpIntegrationTests {
                         proyecto.getId(), nuevo.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "OWNER"))
+                        .param("rol", "OWNER")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         assertFalse(
@@ -547,6 +569,7 @@ class RBACHttpIntegrationTests {
     @Test
     void ownerNoPuedeModificarRolDeMiembroDeOtroProyecto()
             throws Exception {
+
         Usuario ownerA = crearUsuario("ownerA");
         Usuario ownerB = crearUsuario("ownerB");
         Usuario miembroB = crearUsuario("miembroB");
@@ -565,7 +588,8 @@ class RBACHttpIntegrationTests {
                         proyectoB.getId(), miembroB.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "COLLABORATOR"))
+                        .param("rol", "COLLABORATOR")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -582,7 +606,6 @@ class RBACHttpIntegrationTests {
         asignarRol(proyecto, owner, Rol.OWNER);
 
         String token = jwtService.generateAccessToken(owner);
-
 
         mockMvc.perform(get("/proyectos/" + proyecto.getId() + "/auditoria")
                         .header("Authorization", "Bearer " + token))
@@ -615,5 +638,4 @@ class RBACHttpIntegrationTests {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
     }
-
 }

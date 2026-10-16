@@ -5,8 +5,11 @@ import com.safeandsound.controller.ProyectoController;
 import com.safeandsound.exception.GlobalExceptionHandler;
 import com.safeandsound.model.Operacion;
 import com.safeandsound.model.Proyecto;
+import com.safeandsound.model.Usuario;
+import com.safeandsound.service.AuditService;
 import com.safeandsound.service.AutorizacionService;
 import com.safeandsound.service.ProyectoService;
+import com.safeandsound.service.UsuarioService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,24 +25,27 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import com.safeandsound.service.AuditService;
 
 class RS29IntegrationTests {
 
+    private static final String PASSWORD_TEST = "PasswordTest!2026";
+
     private ProyectoService proyectoService;
     private AutorizacionService autorizacionService;
+    private UsuarioService usuarioService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         proyectoService = mock(ProyectoService.class);
         autorizacionService = mock(AutorizacionService.class);
+        usuarioService = mock(UsuarioService.class);
 
-        // <-- CAMBIO AQUÍ: Se agrega el mock de AuditService como tercer argumento
         ProyectoController controller = new ProyectoController(
                 proyectoService,
                 autorizacionService,
-                mock(AuditService.class)
+                mock(AuditService.class),
+                usuarioService
         );
 
         mockMvc = MockMvcBuilders
@@ -56,6 +62,19 @@ class RS29IntegrationTests {
                 null,
                 Collections.emptyList()
         );
+    }
+
+    private Proyecto crearProyectoSimulado(String nombre) {
+        Usuario propietario = new Usuario();
+        propietario.setUsername("usuario-test");
+
+        Proyecto proyecto = new Proyecto();
+        proyecto.setNombre(nombre);
+        proyecto.setDescripcion("Proyecto de prueba");
+        proyecto.setCreadoPor(propietario);
+        proyecto.setActivo(true);
+
+        return proyecto;
     }
 
     @Test
@@ -95,8 +114,7 @@ class RS29IntegrationTests {
         Long usuarioAutenticado = 11L;
         Long proyectoId = 4L;
 
-        Proyecto proyecto = new Proyecto();
-        proyecto.setNombre("BandaRock");
+        Proyecto proyecto = crearProyectoSimulado("BandaRock");
 
         when(proyectoService.obtenerProyecto(proyectoId))
                 .thenReturn(proyecto);
@@ -126,18 +144,30 @@ class RS29IntegrationTests {
                 .verificarPermiso(
                         usuarioId,
                         proyectoId,
-                        Operacion.MODIFICAR_PROYECTO
+                        Operacion.MODIFICAR_NOMBRE_PROYECTO
                 );
 
         mockMvc.perform(
                         put("/proyectos/{proyectoId}", proyectoId)
                                 .principal(autenticar(usuarioId))
                                 .param("nombre", "Proyecto modificado")
+                                .param("passwordConfirmacion", PASSWORD_TEST)
                 )
                 .andExpect(status().isForbidden());
 
+        verify(usuarioService).verificarPassword(
+                eq(usuarioId),
+                any(char[].class)
+        );
+
+        verify(autorizacionService).verificarPermiso(
+                usuarioId,
+                proyectoId,
+                Operacion.MODIFICAR_NOMBRE_PROYECTO
+        );
+
         verify(proyectoService, never())
-                .modificarProyecto(anyLong(), anyString(), any());
+                .modificarProyecto(anyLong(), any(), any());
     }
 
     @Test
@@ -147,8 +177,7 @@ class RS29IntegrationTests {
         Long usuarioId = 11L;
         Long proyectoId = 4L;
 
-        Proyecto proyecto = new Proyecto();
-        proyecto.setNombre("BandaRock");
+        Proyecto proyecto = crearProyectoSimulado("BandaRock");
 
         when(proyectoService.modificarProyecto(
                 eq(proyectoId),
@@ -160,13 +189,19 @@ class RS29IntegrationTests {
                         put("/proyectos/{proyectoId}", proyectoId)
                                 .principal(autenticar(usuarioId))
                                 .param("nombre", "BandaRock")
+                                .param("passwordConfirmacion", PASSWORD_TEST)
                 )
                 .andExpect(status().isOk());
+
+        verify(usuarioService).verificarPassword(
+                eq(usuarioId),
+                any(char[].class)
+        );
 
         verify(autorizacionService).verificarPermiso(
                 usuarioId,
                 proyectoId,
-                Operacion.MODIFICAR_PROYECTO
+                Operacion.MODIFICAR_NOMBRE_PROYECTO
         );
 
         verify(proyectoService).modificarProyecto(

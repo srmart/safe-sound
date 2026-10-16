@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import jakarta.annotation.security.PermitAll;
+
 import jakarta.validation.Valid;
 
 import com.safeandsound.dto.RegistroRequest;
@@ -20,7 +20,6 @@ import com.safeandsound.security.JwtService;
 
 @RestController
 @RequestMapping("/auth")
-@PermitAll // Declara explícitamente que TODOS los endpoints de este controller son públicos por defecto
 public class AuthController {
 
     private final UsuarioService usuarioService;
@@ -77,6 +76,7 @@ public class AuthController {
     }
 
     // <-- NUEVO ENDPOINT PARA RS19: Reautenticación para operaciones de alto riesgo
+
     @PostMapping("/reautenticar")
     @PreAuthorize("isAuthenticated()") // Sobrescribe el @PermitAll de la clase, exigiendo un JWT válido
     public ResponseEntity<Void> reautenticar(
@@ -86,6 +86,7 @@ public class AuthController {
         Long usuarioId = (Long) authentication.getPrincipal();
         try {
             // Llama al método seguro que creamos en UsuarioService
+            System.out.println("DEBUG RS19: Entró al controlador de reautenticación");
             usuarioService.verificarPassword(usuarioId, request.getPassword());
             return ResponseEntity.ok().build();
         } finally {

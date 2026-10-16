@@ -264,4 +264,42 @@ public class ProyectoController {
 
         return ResponseEntity.ok(proyectos);
     }
+
+
+    @PutMapping("/{proyectoId}/miembros/{usuarioId}/rol")
+    public ResponseEntity<Void> modificarRol(
+            @PathVariable Long proyectoId,
+            @PathVariable Long usuarioId,
+            @RequestParam Rol rol,
+            @RequestParam String passwordConfirmacion,
+            Authentication authentication
+    ) {
+        Long usuarioActualId = (Long) authentication.getPrincipal();
+
+        // RS19: Reautenticación antes de modificar roles.
+        usuarioService.verificarPassword(
+                usuarioActualId,
+                passwordConfirmacion.toCharArray()
+        );
+
+        // Solo el OWNER puede modificar roles.
+        autorizacionService.verificarPermiso(
+                usuarioActualId,
+                proyectoId,
+                Operacion.MODIFICAR_ROLES
+        );
+
+        proyectoService.modificarRol(proyectoId, usuarioId, rol);
+
+        // RS19: Registrar la operación administrativa.
+        auditService.registrarAccionAdministrativa(
+                usuarioActualId,
+                proyectoId,
+                "MODIFICAR_ROL",
+                "Usuario ID: " + usuarioId + ", nuevo rol: " + rol
+        );
+
+        return ResponseEntity.noContent().build();
+    }
+
 }

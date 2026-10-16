@@ -50,6 +50,9 @@ public class SecurityConfig {
                                 "/auth/logout"
                         ).permitAll()
 
+                        // RS19: Reautenticación solo para usuarios autenticados
+                        .requestMatchers(HttpMethod.POST, "/auth/reautenticar").authenticated()
+
                                 // RS30: Cada funcionalidad existente debe declararse explícitamente.
                                 // Los endpoints nuevos quedan denegados por defecto.
 

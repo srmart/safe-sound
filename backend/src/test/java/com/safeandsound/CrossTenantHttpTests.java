@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import com.safeandsound.service.AuditService;
 
-
+import com.safeandsound.service.UsuarioService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 class CrossTenantHttpTests {
@@ -36,7 +36,8 @@ class CrossTenantHttpTests {
                 new ProyectoController(
                         proyectoService,
                         autorizacionService,
-                        mock(AuditService.class)
+                        mock(AuditService.class),
+                        mock(UsuarioService.class)
                 );
 
         mockMvc = org.springframework.test.web.servlet.setup.MockMvcBuilders

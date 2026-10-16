@@ -1,37 +1,43 @@
+
 package com.safeandsound;
 
 import com.safeandsound.controller.ProyectoController;
 import com.safeandsound.model.Operacion;
+import com.safeandsound.model.Proyecto;
 import com.safeandsound.model.Rol;
+import com.safeandsound.model.Usuario;
+import com.safeandsound.service.AuditService;
 import com.safeandsound.service.AutorizacionService;
 import com.safeandsound.service.ProyectoService;
+import com.safeandsound.service.UsuarioService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import com.safeandsound.service.AuditService;
 
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class CrossTenantAccessTests {
 
     private ProyectoService proyectoService;
     private AutorizacionService autorizacionService;
+    private UsuarioService usuarioService;
     private ProyectoController proyectoController;
 
-        @BeforeEach
+    @BeforeEach
     void setUp() {
         proyectoService = mock(ProyectoService.class);
         autorizacionService = mock(AutorizacionService.class);
+        usuarioService = mock(UsuarioService.class);
 
-        // <-- CAMBIO AQUÍ: Se agrega el mock de AuditService como tercer argumento
         proyectoController = new ProyectoController(
                 proyectoService,
                 autorizacionService,
-                mock(AuditService.class)
+                mock(AuditService.class),
+                usuarioService
         );
     }
 
@@ -41,11 +47,9 @@ class CrossTenantAccessTests {
         Long usuarioId = 1L;
         Long proyectoAjenoId = 2L;
 
-        var authentication =
-                new UsernamePasswordAuthenticationToken(
-                        usuarioId,
-                        null
-                );
+        var authentication = new UsernamePasswordAuthenticationToken(
+                usuarioId, null
+        );
 
         doThrow(new AccessDeniedException(
                 "El usuario no pertenece al proyecto"
@@ -81,11 +85,21 @@ class CrossTenantAccessTests {
         Long usuarioId = 1L;
         Long proyectoId = 1L;
 
-        var authentication =
-                new UsernamePasswordAuthenticationToken(
-                        usuarioId,
-                        null
-                );
+        var authentication = new UsernamePasswordAuthenticationToken(
+                usuarioId, null
+        );
+
+        Usuario propietario = new Usuario();
+        propietario.setUsername("usuario-test");
+
+        Proyecto proyecto = new Proyecto();
+        proyecto.setNombre("Proyecto de prueba");
+        proyecto.setDescripcion("Descripcion de prueba");
+        proyecto.setCreadoPor(propietario);
+        proyecto.setActivo(true);
+
+        when(proyectoService.obtenerProyecto(proyectoId))
+                .thenReturn(proyecto);
 
         assertDoesNotThrow(
                 () -> proyectoController.obtenerProyecto(
@@ -109,11 +123,9 @@ class CrossTenantAccessTests {
         Long usuarioId = 1L;
         Long proyectoAjenoId = 2L;
 
-        var authentication =
-                new UsernamePasswordAuthenticationToken(
-                        usuarioId,
-                        null
-                );
+        var authentication = new UsernamePasswordAuthenticationToken(
+                usuarioId, null
+        );
 
         doThrow(new AccessDeniedException(
                 "El usuario no pertenece al proyecto"
@@ -122,7 +134,7 @@ class CrossTenantAccessTests {
                 .verificarPermiso(
                         usuarioId,
                         proyectoAjenoId,
-                        Operacion.MODIFICAR_PROYECTO
+                        Operacion.MODIFICAR_NOMBRE_PROYECTO
                 );
 
         assertThrows(
@@ -131,21 +143,27 @@ class CrossTenantAccessTests {
                         proyectoAjenoId,
                         "Nombre manipulado",
                         "Descripción manipulada",
+                        "password-de-prueba",
                         authentication
                 )
+        );
+
+        verify(usuarioService).verificarPassword(
+                eq(usuarioId),
+                any(char[].class)
         );
 
         verify(autorizacionService).verificarPermiso(
                 usuarioId,
                 proyectoAjenoId,
-                Operacion.MODIFICAR_PROYECTO
+                Operacion.MODIFICAR_NOMBRE_PROYECTO
         );
 
         verify(proyectoService, never())
                 .modificarProyecto(
-                        proyectoAjenoId,
-                        "Nombre manipulado",
-                        "Descripción manipulada"
+                        anyLong(),
+                        any(),
+                        any()
                 );
     }
 
@@ -156,11 +174,9 @@ class CrossTenantAccessTests {
         Long proyectoAjenoId = 2L;
         Long nuevoUsuarioId = 3L;
 
-        var authentication =
-                new UsernamePasswordAuthenticationToken(
-                        usuarioActualId,
-                        null
-                );
+        var authentication = new UsernamePasswordAuthenticationToken(
+                usuarioActualId, null
+        );
 
         doThrow(new AccessDeniedException(
                 "El usuario no pertenece al proyecto"
@@ -178,6 +194,7 @@ class CrossTenantAccessTests {
                         proyectoAjenoId,
                         nuevoUsuarioId,
                         Rol.VIEWER,
+                        "password-de-prueba",
                         authentication
                 )
         );
@@ -203,11 +220,9 @@ class CrossTenantAccessTests {
         Long proyectoAjenoId = 2L;
         Long usuarioObjetivoId = 3L;
 
-        var authentication =
-                new UsernamePasswordAuthenticationToken(
-                        usuarioActualId,
-                        null
-                );
+        var authentication = new UsernamePasswordAuthenticationToken(
+                usuarioActualId, null
+        );
 
         doThrow(new AccessDeniedException(
                 "El usuario no pertenece al proyecto"
@@ -225,6 +240,7 @@ class CrossTenantAccessTests {
                         proyectoAjenoId,
                         usuarioObjetivoId,
                         Rol.COLLABORATOR,
+                        "password-de-prueba",
                         authentication
                 )
         );
@@ -249,11 +265,9 @@ class CrossTenantAccessTests {
         Long usuarioId = 1L;
         Long proyectoAjenoId = 2L;
 
-        var authentication =
-                new UsernamePasswordAuthenticationToken(
-                        usuarioId,
-                        null
-                );
+        var authentication = new UsernamePasswordAuthenticationToken(
+                usuarioId, null
+        );
 
         doThrow(new AccessDeniedException(
                 "El usuario no pertenece al proyecto"
@@ -269,6 +283,7 @@ class CrossTenantAccessTests {
                 AccessDeniedException.class,
                 () -> proyectoController.archivarProyecto(
                         proyectoAjenoId,
+                        "password-de-prueba",
                         authentication
                 )
         );
