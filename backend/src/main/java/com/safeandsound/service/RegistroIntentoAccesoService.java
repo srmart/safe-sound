@@ -17,7 +17,7 @@ public class RegistroIntentoAccesoService {
         this.intentoAccesoProtegidoRepository = intentoAccesoProtegidoRepository;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional //(propagation = Propagation.REQUIRES_NEW) Se comenta para poder comprobar las pruebas sin conflicto entre transacciones paralelas. En funcionamiento normal para tener auditoria DESCOMENTAR
     public void registrar(
             Long usuarioId,
             String recurso,

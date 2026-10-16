@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.Instant;
 
 public interface ArchivoRepository extends JpaRepository<Archivo, Long> {
 
@@ -15,6 +16,10 @@ public interface ArchivoRepository extends JpaRepository<Archivo, Long> {
     Optional<Archivo> findByIdAndProyectoId(
             Long archivoId,
             Long proyectoId
+    );
+
+    List<Archivo> findByEliminadoTrueAndEliminadoEnLessThanEqual(
+            Instant limite
     );
 
     // Listar únicamente archivos activos
