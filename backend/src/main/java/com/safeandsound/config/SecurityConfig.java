@@ -58,7 +58,6 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/proyectos").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/proyectos/{proyectoId}").authenticated()
                                 .requestMatchers(HttpMethod.PUT, "/proyectos/{proyectoId}").authenticated()
-                                .requestMatchers(HttpMethod.PUT, "/proyectos/{proyectoId}/archivar").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/proyectos/{proyectoId}").authenticated()
 
 
