@@ -13,8 +13,7 @@ public record ArchivoResponseDTO(
 
     public record UsuarioResumenDTO(
             Long id,
-            String username,
-            String email
+            String username
     ) {}
 
     public static ArchivoResponseDTO desdeEntidad(Archivo archivo) {
@@ -25,8 +24,7 @@ public record ArchivoResponseDTO(
                 archivo.getFechaSubida(),
                 new UsuarioResumenDTO(
                         archivo.getSubidoPor().getId(),
-                        archivo.getSubidoPor().getUsername(),
-                        archivo.getSubidoPor().getEmail()
+                        archivo.getSubidoPor().getUsername()
                 )
         );
     }

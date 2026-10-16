@@ -5,6 +5,7 @@ import com.safeandsound.dto.ArchivoResponseDTO;
 import com.safeandsound.service.ArchivoService;
 import com.safeandsound.model.SolicitudRestauracion;
 import com.safeandsound.service.SolicitudRestauracionService;
+import com.safeandsound.dto.SolicitudRestauracionResponse;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
@@ -129,7 +130,7 @@ public class ArchivoController {
     }
 
     @PostMapping("/{archivoId}/solicitudes-restauracion")
-    public ResponseEntity<SolicitudRestauracion> solicitarRestauracion(
+    public ResponseEntity<SolicitudRestauracionResponse> solicitarRestauracion(
             @PathVariable Long proyectoId,
             @PathVariable Long archivoId,
             Authentication authentication
@@ -141,6 +142,8 @@ public class ArchivoController {
                         usuarioId, proyectoId, archivoId
                 );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(solicitud);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(SolicitudRestauracionResponse.basica(solicitud));
     }
 }

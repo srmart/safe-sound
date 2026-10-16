@@ -6,6 +6,7 @@ import com.safeandsound.model.Operacion;
 import com.safeandsound.model.SolicitudRestauracion;
 import com.safeandsound.service.AutorizacionService;
 import com.safeandsound.service.SolicitudRestauracionService;
+import com.safeandsound.dto.SolicitudRestauracionResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,49 +32,56 @@ public class SolicitudRestauracionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SolicitudRestauracion>> listarSolicitudes(
+    public ResponseEntity<List<SolicitudRestauracionResponse>> listarSolicitudes(
             @PathVariable Long proyectoId,
             Authentication authentication
     ) {
         Long usuarioId = (Long) authentication.getPrincipal();
 
-        // Solo el OWNER puede consultar el listado completo.
         autorizacionService.verificarPermiso(
                 usuarioId, proyectoId, Operacion.APROBAR_SOLICITUD_RESTAURACION
         );
 
-        return ResponseEntity.ok(
-                solicitudService.listarSolicitudes(proyectoId)
-        );
+        List<SolicitudRestauracionResponse> solicitudes = solicitudService
+                .listarSolicitudes(proyectoId)
+                .stream()
+                .map(SolicitudRestauracionResponse::administrativa)
+                .toList();
+
+        return ResponseEntity.ok(solicitudes);
     }
 
     @PostMapping("/{solicitudId}/aprobar")
-    public ResponseEntity<SolicitudRestauracion> aprobarSolicitud(
+    public ResponseEntity<SolicitudRestauracionResponse> aprobarSolicitud(
             @PathVariable Long proyectoId,
             @PathVariable Long solicitudId,
             Authentication authentication
     ) {
         Long usuarioId = (Long) authentication.getPrincipal();
 
+        SolicitudRestauracion solicitud = solicitudService.aprobarSolicitud(
+                usuarioId, proyectoId, solicitudId
+        );
+
         return ResponseEntity.ok(
-                solicitudService.aprobarSolicitud(
-                        usuarioId, proyectoId, solicitudId
-                )
+                SolicitudRestauracionResponse.administrativa(solicitud)
         );
     }
 
     @PostMapping("/{solicitudId}/rechazar")
-    public ResponseEntity<SolicitudRestauracion> rechazarSolicitud(
+    public ResponseEntity<SolicitudRestauracionResponse> rechazarSolicitud(
             @PathVariable Long proyectoId,
             @PathVariable Long solicitudId,
             Authentication authentication
     ) {
         Long usuarioId = (Long) authentication.getPrincipal();
 
+        SolicitudRestauracion solicitud = solicitudService.rechazarSolicitud(
+                usuarioId, proyectoId, solicitudId
+        );
+
         return ResponseEntity.ok(
-                solicitudService.rechazarSolicitud(
-                        usuarioId, proyectoId, solicitudId
-                )
+                SolicitudRestauracionResponse.administrativa(solicitud)
         );
     }
 

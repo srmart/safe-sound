@@ -4,6 +4,7 @@ import com.safeandsound.dto.AuditoriaResponse;
 import com.safeandsound.dto.ProyectoListadoDTO;
 import com.safeandsound.model.Operacion;
 import com.safeandsound.model.Proyecto;
+import com.safeandsound.dto.ProyectoResponse;
 import com.safeandsound.model.RegistroAuditoria;
 import com.safeandsound.model.Rol;
 import com.safeandsound.service.AuditService;
@@ -37,41 +38,58 @@ public class ProyectoController {
     }
 
     @PostMapping
-    public ResponseEntity<Proyecto> crearProyecto(
+    public ResponseEntity<ProyectoResponse> crearProyecto(
             @RequestParam String nombre,
             @RequestParam(required = false) String descripcion,
             Authentication authentication
     ) {
         Long usuarioId = (Long) authentication.getPrincipal();
         Proyecto proyecto = proyectoService.crearProyecto(usuarioId, nombre, descripcion);
-        return ResponseEntity.status(HttpStatus.CREATED).body(proyecto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ProyectoResponse.desde(proyecto));
     }
 
     @GetMapping("/{proyectoId}")
-    public ResponseEntity<Proyecto> obtenerProyecto(
+    public ResponseEntity<ProyectoResponse> obtenerProyecto(
             @PathVariable Long proyectoId,
             Authentication authentication
     ) {
         Long usuarioId = (Long) authentication.getPrincipal();
         autorizacionService.verificarPermiso(usuarioId, proyectoId, Operacion.VER_PROYECTO);
-        return ResponseEntity.ok(proyectoService.obtenerProyecto(proyectoId));
+        Proyecto proyecto = proyectoService.obtenerProyecto(proyectoId);
+        return ResponseEntity.ok(ProyectoResponse.desde(proyecto));
     }
 
     @PutMapping("/{proyectoId}")
-    public ResponseEntity<Proyecto> modificarProyecto(
+    public ResponseEntity<ProyectoResponse> modificarProyecto(
             @PathVariable Long proyectoId,
             @RequestParam String nombre,
             @RequestParam(required = false) String descripcion,
             Authentication authentication
     ) {
         Long usuarioId = (Long) authentication.getPrincipal();
-        autorizacionService.verificarPermiso(usuarioId, proyectoId, Operacion.MODIFICAR_PROYECTO);
-        
-        // RS19: Auditoría de acción administrativa
-        auditService.registrarAccionAdministrativa(usuarioId, proyectoId, "MODIFICAR_PROYECTO", 
-                "Nombre: " + nombre + ", Descripción: " + descripcion);
 
-        return ResponseEntity.ok(proyectoService.modificarProyecto(proyectoId, nombre, descripcion));
+        autorizacionService.verificarPermiso(
+                usuarioId,
+                proyectoId,
+                Operacion.MODIFICAR_PROYECTO
+        );
+
+        // RS13: El servicio verifica que el proyecto esté activo.
+        Proyecto proyecto = proyectoService.modificarProyecto(
+                proyectoId,
+                nombre,
+                descripcion
+        );
+
+        // RS19: Registrar la acción después de modificar el proyecto.
+        auditService.registrarAccionAdministrativa(
+                usuarioId,
+                proyectoId,
+                "MODIFICAR_PROYECTO",
+                "Nombre: " + nombre + ", Descripción: " + descripcion
+        );
+
+        return ResponseEntity.ok(ProyectoResponse.desde(proyecto));
     }
 
     @DeleteMapping("/{proyectoId}")

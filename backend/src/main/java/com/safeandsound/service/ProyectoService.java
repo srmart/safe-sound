@@ -69,6 +69,13 @@ public class ProyectoService {
     ) {
         Proyecto proyecto = obtenerProyecto(proyectoId);
 
+        // RS13: No se permite modificar campos de proyectos archivados.
+        if (!proyecto.isActivo()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "No se pueden modificar los campos de un proyecto archivado"
+            );
+        }
+
         proyecto.setNombre(nombre);
         proyecto.setDescripcion(descripcion);
 
