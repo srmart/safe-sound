@@ -1,8 +1,8 @@
 # Safe & Sound
 
-Safe & Sound es una aplicación web orientada a artistas y productores, pensada para facilitar la colaboración en proyectos musicales. Permite registrarse, iniciar sesión, crear y administrar proyectos, y consultar una biblioteca de archivos por proyecto.
+Safe & Sound es una aplicación web orientada a artistas y productores, pensada para facilitar la colaboración en proyectos musicales. Permite registrarse, iniciar sesión, crear y administrar proyectos, gestionar miembros y consultar una biblioteca de archivos por proyecto.
 
-El proyecto fue desarrollado para la materia **Desarrollo Seguro** de la **Facultad de Ingeniería de la Universidad de Montevideo**, teniendo en cuenta tanto las funcionalidades de la aplicación como aspectos de autenticación, autorización y control de acceso.
+El proyecto fue desarrollado para la materia **Desarrollo Seguro** de la **Facultad de Ingeniería de la Universidad de Montevideo**, teniendo en cuenta tanto las funcionalidades de la aplicación como aspectos de autenticación, autorización, control de acceso y auditoría.
 
 ## Equipo de Desarrollo
 
@@ -63,7 +63,7 @@ Para generar una clave válida:
 openssl rand -base64 32
 ```
 
-El archivo `.env` está excluido de Git y debe conservarse localmente.
+El archivo `.env` está excluido de Git y debe conservarse localmente. No se deben subir contraseñas ni secretos reales al repositorio.
 
 ### 2. Levantar la base de datos
 
@@ -190,7 +190,7 @@ El frontend se ejecuta mediante Vite y normalmente queda disponible en:
 http://localhost:5173
 ```
 
-Abrir esa dirección en el navegador. Las rutas del frontend son en inglés (`/login`, `/register`, `/projects`); la API del backend usa, entre otros, el endpoint `/proyectos`.
+Abrir esa dirección en el navegador. Las rutas del frontend son en inglés (`/login`, `/register`, `/projects`); la API del backend utiliza, entre otros, el endpoint `/proyectos`.
 
 ---
 
@@ -201,7 +201,7 @@ Abrir esa dirección en el navegador. Las rutas del frontend son en inglés (`/l
 1. Abrir `http://localhost:5173`.
 2. Si no existe una cuenta, seleccionar **Registrate**, completar email, nombre de usuario y una contraseña de al menos ocho caracteres.
 3. Volver a **Iniciar sesión** e ingresar con las mismas credenciales.
-4. Al autenticarse, la aplicación redirige a **Mis proyectos**. El token de acceso se usa automáticamente para las operaciones protegidas.
+4. Al autenticarse, la aplicación redirige a **Mis proyectos**. El token de acceso se usa para las operaciones protegidas.
 
 Si la sesión vence o el token no es válido, la aplicación borra la sesión local y dirige nuevamente a `/login`.
 
@@ -213,17 +213,18 @@ En **Mis proyectos** se puede:
 * Buscar proyectos por nombre.
 * Filtrar por estado: todos, activos o archivados.
 * Abrir un proyecto al seleccionar su tarjeta.
-* Archivar un proyecto cuando el rol es **Propietario**.
+* Editar información del proyecto, según los permisos correspondientes.
+* Archivar un proyecto cuando se cuenta con autorización.
 
-Cada proyecto muestra el estado y el rol de la persona autenticada:
+Cada proyecto muestra el estado y el rol de la persona autenticada.
 
-| Rol | Acciones disponibles en la interfaz |
-| --- | --- |
-| Propietario | Crear y archivar proyectos; acceder a los controles de edición; subir, descargar y eliminar archivos. |
-| Colaborador | Subir, descargar y eliminar archivos. |
-| Solo lectura | Visualizar y descargar archivos. |
+| Rol                          | Acciones disponibles en la interfaz                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Propietario (`OWNER`)        | Crear y archivar proyectos; acceder a los controles de edición; subir, descargar y eliminar archivos.            |
+| Colaborador (`COLLABORATOR`) | Trabajar dentro del proyecto de acuerdo con sus permisos, incluyendo las operaciones habilitadas sobre archivos. |
+| Solo lectura (`VIEWER`)      | Visualizar y descargar archivos.                                                                                 |
 
-Las operaciones de proyecto que usan la API se autorizan en el backend con el JWT y la membresía del proyecto.
+Las operaciones se autorizan en el backend según la identidad autenticada, la membresía del proyecto y los permisos correspondientes. La visibilidad de una acción en el frontend no sustituye la autorización del servidor.
 
 ### 3. Gestionar archivos de un proyecto
 
@@ -237,10 +238,10 @@ La interfaz de R6 aplica las acciones según el rol. En esta entrega, la bibliot
 
 ### Comprobación rápida
 
-Con los tres servicios levantados, este flujo debe funcionar:
+Con los tres servicios levantados, este flujo permite comprobar las funcionalidades principales:
 
 ```text
-Registro → Inicio de sesión → Crear proyecto → Abrir proyecto → Subir/descargar/eliminar archivo
+Registro → Inicio de sesión → Crear proyecto → Abrir proyecto → Gestionar archivos
 ```
 
 Si el navegador muestra `401 Unauthorized` al cargar proyectos, verificar que el backend haya sido reiniciado con las variables indicadas arriba e iniciar sesión nuevamente.
@@ -282,9 +283,13 @@ El proyecto está dividido principalmente en tres partes:
 
 El frontend se encarga de la interfaz y de comunicarse con la API.
 
-El backend concentra la lógica de negocio, autenticación y autorización.
+El backend concentra la lógica de negocio, autenticación, autorización y validaciones de las operaciones solicitadas.
 
 PostgreSQL se utiliza para almacenar la información de los usuarios, proyectos, membresías y demás datos necesarios para la aplicación.
+
+### Separación de módulos
+
+El frontend y el backend se mantienen en directorios separados. Esta organización permite trabajar sobre la interfaz y la lógica del servidor de forma independiente, conservando una API como punto de comunicación entre ambos módulos.
 
 ---
 
@@ -292,17 +297,17 @@ PostgreSQL se utiliza para almacenar la información de los usuarios, proyectos,
 
 ### Backend
 
-| Tecnología    | Uso                                 |
-|---------------| ----------------------------------- |
-| Java 21       | Lenguaje de programación            |
-| Spring Boot   | Framework principal                 |
-| Spring Web MVC | Desarrollo de la API REST           |
+| Tecnología      | Uso                                 |
+| --------------- | ----------------------------------- |
+| Java 21         | Lenguaje de programación            |
+| Spring Boot     | Framework principal                 |
+| Spring Web MVC  | Desarrollo de la API REST           |
 | Spring Security | Autenticación y seguridad           |
 | Spring Data JPA | Persistencia                        |
-| Hibernate     | ORM                                 |
-| PostgreSQL    | Base de datos                       |
-| JWT           | Generación y validación de JWT      |
-| Maven         | Gestión del proyecto y dependencias |
+| Hibernate       | ORM                                 |
+| PostgreSQL      | Base de datos                       |
+| JWT             | Generación y validación de tokens   |
+| Maven           | Gestión del proyecto y dependencias |
 
 ### Frontend
 
@@ -320,6 +325,7 @@ PostgreSQL se utiliza para almacenar la información de los usuarios, proyectos,
 * Docker Compose
 * Git
 * GitHub
+* YouTrack
 * OWASP Dependency-Check
 
 ---
@@ -351,7 +357,9 @@ safe-and-sound/
 │
 ├── database/
 │   ├── init.sql
-│   └── init-app-user.sh
+│   ├── init-app-user.sh
+│   ├── migrate-rf7.sql
+│   └── migrate-rs8.sql
 │
 ├── frontend/
 │   └── ...
@@ -362,6 +370,8 @@ safe-and-sound/
 └── .gitignore
 ```
 
+El backend organiza las responsabilidades en controladores, servicios, modelos, repositorios y DTOs. La configuración de seguridad se encuentra separada de la lógica de negocio.
+
 ---
 
 ## Autenticación
@@ -370,12 +380,8 @@ La autenticación se realiza mediante **JSON Web Tokens (JWT)**.
 
 Al iniciar sesión, el backend genera dos tokens:
 
-* Access Token
-* Refresh Token
-
-El Access Token se utiliza para acceder a los endpoints que requieren autenticación.
-
-El Refresh Token permite solicitar un nuevo Access Token cuando sea necesario.
+* **Access Token:** se utiliza para acceder a los endpoints que requieren autenticación.
+* **Refresh Token:** permite solicitar un nuevo Access Token cuando sea necesario.
 
 El flujo básico es:
 
@@ -400,6 +406,28 @@ Backend
 ```
 
 Los refresh tokens se almacenan en el backend y pueden ser revocados.
+
+### Reautenticación para operaciones sensibles
+
+Se incorpora el endpoint `POST /auth/reautenticar`, que permite verificar la contraseña del usuario autenticado antes de continuar con determinadas operaciones sensibles.
+
+La solicitud utiliza el token de acceso y envía la contraseña en el cuerpo de la petición:
+
+```http
+POST /auth/reautenticar
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+Ejemplo del cuerpo:
+
+```json
+{
+  "password": "contraseña_del_usuario"
+}
+```
+
+La verificación comprueba la contraseña ingresada contra la almacenada para el usuario autenticado. Si las credenciales no coinciden, la operación no debe considerarse autorizada por esa confirmación.
 
 ---
 
@@ -431,26 +459,81 @@ El rol de cada usuario se obtiene desde la información almacenada en el backend
 
 Las decisiones de autorización se realizan del lado del servidor y no dependen de un rol enviado por el cliente.
 
+### Permisos sobre proyectos
+
+Las operaciones de modificación se controlan por tipo de acción. Esto permite aplicar permisos diferentes a campos distintos del mismo proyecto.
+
+| Operación                              | Permiso requerido                |
+| -------------------------------------- | -------------------------------- |
+| Modificar el nombre del proyecto       | `MODIFICAR_NOMBRE_PROYECTO`      |
+| Modificar la descripción del proyecto  | `MODIFICAR_DESCRIPCION_PROYECTO` |
+| Archivar un proyecto                   | `ARCHIVAR_PROYECTO`              |
+| Agregar miembros o modificar sus roles | `MODIFICAR_ROLES`                |
+| Consultar los registros de auditoría   | `VER_AUDITORIA`                  |
+
+Los permisos de modificación del nombre y la descripción se asignan de la siguiente manera:
+
+* **`OWNER`:** puede modificar el nombre y la descripción.
+* **`COLLABORATOR`:** puede modificar la descripción, pero no el nombre.
+* **`VIEWER`:** no cuenta con esos permisos de modificación.
+
+La autorización de cada operación se verifica en el backend. Además, las rutas no habilitadas explícitamente se mantienen denegadas por defecto.
+
+### Confirmación de contraseña
+
+Las operaciones sensibles contempladas en esta implementación requieren una confirmación de contraseña:
+
+* Editar un proyecto.
+* Archivar un proyecto.
+* Agregar un miembro a un proyecto.
+* Modificar el rol de un miembro.
+
+La confirmación se verifica en el backend antes de ejecutar la operación correspondiente. La reautenticación no sustituye los controles de autorización: un usuario también debe disponer de los permisos necesarios para realizar la acción solicitada.
+
 ---
 
 ## API
 
 Algunos de los endpoints principales son:
 
-| Método | Endpoint         | Descripción                       |
-| ------ | ---------------- | --------------------------------- |
-| `POST` | `/auth/register` | Registrar un usuario              |
-| `POST` | `/auth/login`    | Iniciar sesión                    |
-| `POST` | `/auth/refresh`  | Renovar los tokens                |
-| `POST` | `/auth/logout`   | Cerrar sesión                     |
-| `GET`  | `/proyectos`     | Obtener los proyectos del usuario |
-| `POST` | `/proyectos`     | Crear un proyecto                 |
+| Método   | Endpoint                                           | Descripción                                                |
+| -------- | -------------------------------------------------- | ---------------------------------------------------------- |
+| `POST`   | `/auth/register`                                   | Registrar un usuario                                       |
+| `POST`   | `/auth/login`                                      | Iniciar sesión                                             |
+| `POST`   | `/auth/refresh`                                    | Renovar los tokens                                         |
+| `POST`   | `/auth/logout`                                     | Cerrar sesión                                              |
+| `POST`   | `/auth/reautenticar`                               | Verificar nuevamente la contraseña del usuario autenticado |
+| `GET`    | `/proyectos`                                       | Obtener los proyectos del usuario                          |
+| `POST`   | `/proyectos`                                       | Crear un proyecto                                          |
+| `PUT`    | `/proyectos/{proyectoId}`                          | Modificar la información de un proyecto                    |
+| `DELETE` | `/proyectos/{proyectoId}`                          | Archivar un proyecto                                       |
+| `POST`   | `/proyectos/{proyectoId}/miembros/{usuarioId}`     | Agregar un miembro al proyecto                             |
+| `PUT`    | `/proyectos/{proyectoId}/miembros/{usuarioId}/rol` | Modificar el rol de un miembro                             |
+| `GET`    | `/proyectos/{proyectoId}/auditoria`                | Consultar la auditoría del proyecto                        |
 
 Los endpoints que requieren autenticación utilizan un JWT mediante el siguiente header:
 
 ```http
 Authorization: Bearer <token>
 ```
+
+Las operaciones de modificación, archivo y gestión de miembros requieren la confirmación de contraseña correspondiente, además de la autorización asociada al rol del usuario.
+
+---
+
+## Auditoría
+
+El sistema contempla el registro de eventos asociados a operaciones de gestión de proyectos, con el objetivo de mantener la trazabilidad de los cambios.
+
+Entre las operaciones que registran eventos se encuentran:
+
+* Modificación del nombre del proyecto.
+* Modificación de la descripción del proyecto.
+* Archivo de proyectos.
+* Incorporación de miembros.
+* Modificación de roles.
+
+La consulta de los registros de auditoría está protegida mediante el permiso `VER_AUDITORIA`.
 
 ---
 
@@ -462,7 +545,7 @@ Entre las principales tablas se encuentran:
 
 ### `usuarios`
 
-Contiene la información de los usuarios registrados en el sistema.
+Contiene la información de los usuarios registrados en el sistema, así como los datos y preferencias asociados a su perfil.
 
 ### `proyectos`
 
@@ -488,6 +571,10 @@ Algunos de sus campos son:
 * `rol`
 
 Esto permite que un mismo usuario pueda tener diferentes roles dependiendo del proyecto al que pertenezca.
+
+### `intentos_acceso_protegido`
+
+Registra intentos de acceso a recursos protegidos, de acuerdo con la implementación de RS8.
 
 ---
 
@@ -539,6 +626,37 @@ $resultado = Invoke-RestMethod `
 $resultado | ConvertTo-Json
 ```
 
+### Reautenticación
+
+```powershell
+$body = @{
+    password = "password123"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Uri "http://localhost:8080/auth/reautenticar" `
+    -Method Post `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -ContentType "application/json" `
+    -Body $body
+```
+
+Una respuesta exitosa indica que la contraseña fue verificada para el usuario autenticado.
+
+### Pruebas de autorización
+
+Las pruebas de integración contemplan escenarios de control de acceso a proyectos y operaciones de modificación.
+
+Se deben considerar, entre otros, los siguientes casos:
+
+* Un usuario sin autenticación no debe ejecutar operaciones protegidas.
+* Un usuario autenticado sin los permisos requeridos no debe poder realizar una modificación.
+* Un colaborador no debe poder modificar el nombre del proyecto si ese permiso está reservado al propietario.
+* Las operaciones sensibles deben requerir confirmación de contraseña.
+* La consulta de auditoría debe estar restringida a los usuarios autorizados.
+
+La ejecución de las pruebas permite comprobar el comportamiento de la implementación y detectar posibles errores de integración.
+
 ---
 
 ## Análisis de dependencias
@@ -584,6 +702,7 @@ La rama utilizada para el desarrollo es:
 Development
 ```
 
+El desarrollo se organiza mediante ramas e issues de trabajo, utilizando Git para el control de versiones y YouTrack para la gestión de tareas.
 
 ---
 
@@ -591,4 +710,6 @@ Development
 
 Proyecto desarrollado para la materia **Desarrollo Seguro** de la **Facultad de Ingeniería de la Universidad de Montevideo**.
 
-El objetivo del proyecto es aplicar conceptos de desarrollo web y buenas prácticas de seguridad, trabajando con autenticación, autorización, roles y control de acceso dentro de una aplicación web.
+El objetivo del proyecto es aplicar conceptos de desarrollo web y buenas prácticas de seguridad, trabajando con autenticación, autorización, roles, control de acceso, confirmación de identidad para operaciones sensibles y auditoría dentro de una aplicación web.
+
+El proyecto continúa en desarrollo y sus funcionalidades y mecanismos de seguridad se incorporan progresivamente durante los sprints de trabajo.
