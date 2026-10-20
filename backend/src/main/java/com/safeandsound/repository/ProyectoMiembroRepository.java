@@ -44,4 +44,16 @@ public interface ProyectoMiembroRepository extends JpaRepository<ProyectoMiembro
             @Param("nombre") String nombre,
             @Param("activo") Boolean activo
     );
+
+    // Listar miembros de un proyecto junto con sus usuarios.
+    @Query("""
+    SELECT pm
+    FROM ProyectoMiembro pm
+    JOIN FETCH pm.usuario u
+    WHERE pm.proyecto.id = :proyectoId
+    ORDER BY u.username ASC
+    """)
+    List<ProyectoMiembro> listarMiembros(
+            @Param("proyectoId") Long proyectoId
+    );
 }

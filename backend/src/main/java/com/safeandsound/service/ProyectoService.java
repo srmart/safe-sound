@@ -166,4 +166,10 @@ public class ProyectoService {
         );
     }
 
+    // Obtener los miembros de un proyecto.
+    @Transactional(readOnly = true)
+    public List<ProyectoMiembro> listarMiembros(Long proyectoId) {
+        return proyectoMiembroRepository.listarMiembros(proyectoId);
+    }
+
 }

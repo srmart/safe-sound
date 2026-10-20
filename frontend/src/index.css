@@ -2,12 +2,19 @@
 
 :root {
   font-family: 'Outfit', 'Segoe UI', sans-serif;
-  color: #f7f5ff;
-  background: #100d1c;
+  color: #271f37;
+  background: #f8f6fc;
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme='dark'] {
+  color: #f7f5ff;
+  background: #100d1c;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }

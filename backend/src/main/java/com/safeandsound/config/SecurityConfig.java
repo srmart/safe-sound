@@ -66,8 +66,13 @@ public class SecurityConfig {
 
 
                                 // Gestión de miembros
+                                .requestMatchers(HttpMethod.GET, "/proyectos/{proyectoId}/miembros").authenticated()
+
                                 .requestMatchers(HttpMethod.POST, "/proyectos/{proyectoId}/miembros/{usuarioId}").authenticated()
+
                                 .requestMatchers(HttpMethod.PUT, "/proyectos/{proyectoId}/miembros/{usuarioId}/rol").authenticated()
+
+
 
                                 // Auditoría administrativa
                                 .requestMatchers(HttpMethod.GET, "/proyectos/{proyectoId}/auditoria").authenticated()

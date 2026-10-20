@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.safeandsound.dto.ProyectoMiembroResponse;
 
 import java.util.List;
 
@@ -174,6 +175,31 @@ public class ProyectoController {
 
         return ResponseEntity.noContent().build();
     }
+
+
+    @GetMapping("/{proyectoId}/miembros")
+    public ResponseEntity<List<ProyectoMiembroResponse>> listarMiembros(
+            @PathVariable Long proyectoId,
+            Authentication authentication
+    ) {
+        Long usuarioActualId = (Long) authentication.getPrincipal();
+
+        // Verificar que el usuario tenga permiso para ver miembros.
+        autorizacionService.verificarPermiso(
+                usuarioActualId,
+                proyectoId,
+                Operacion.VER_MIEMBROS
+        );
+
+        List<ProyectoMiembroResponse> miembros =
+                proyectoService.listarMiembros(proyectoId)
+                        .stream()
+                        .map(ProyectoMiembroResponse::desde)
+                        .toList();
+
+        return ResponseEntity.ok(miembros);
+    }
+
 
     @PostMapping("/{proyectoId}/miembros/{usuarioId}")
     public ResponseEntity<Void> agregarMiembro(
