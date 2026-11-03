@@ -8,6 +8,7 @@ import com.safeandsound.repository.ProyectoMiembroRepository;
 import com.safeandsound.repository.ProyectoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.safeandsound.exception.ProyectoDebeTenerOwnerException;
 import java.util.List;
 
 @Service
@@ -96,6 +97,8 @@ public class ProyectoService {
 
         proyectoRepository.save(proyecto);
     }
+
+
     @Transactional
     public void agregarMiembro(
             Long proyectoId,
@@ -128,6 +131,13 @@ public class ProyectoService {
             Long usuarioId,
             Rol nuevoRol
     ) {
+        // Bloquear el proyecto para evitar modificaciones simultáneas
+        // de roles que puedan dejarlo sin OWNER.
+        proyectoRepository.buscarPorIdConBloqueo(proyectoId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Proyecto no encontrado")
+                );
+
         ProyectoMiembro miembro = proyectoMiembroRepository
                 .findByProyectoIdAndUsuarioId(proyectoId, usuarioId)
                 .orElseThrow(() ->
@@ -135,6 +145,18 @@ public class ProyectoService {
                                 "El usuario no pertenece al proyecto"
                         )
                 );
+
+        // Evitar que el último OWNER pierda su rol.
+        if (miembro.getRol() == Rol.OWNER && nuevoRol != Rol.OWNER) {
+            long cantidadOwners = proyectoMiembroRepository
+                    .countByProyectoIdAndRol(proyectoId, Rol.OWNER);
+
+            if (cantidadOwners <= 1) {
+                throw new ProyectoDebeTenerOwnerException(
+                        "El proyecto debe tener al menos un OWNER"
+                );
+            }
+        }
 
         miembro.setRol(nuevoRol);
 

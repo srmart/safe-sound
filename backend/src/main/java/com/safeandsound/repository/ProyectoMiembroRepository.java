@@ -29,6 +29,8 @@ public interface ProyectoMiembroRepository extends JpaRepository<ProyectoMiembro
             Rol rol
     );
 
+    long countByProyectoIdAndRol(Long proyectoId, Rol rol);
+
     // R5 - Listado de proyectos con búsqueda y filtros
     @Query("""
     SELECT pm

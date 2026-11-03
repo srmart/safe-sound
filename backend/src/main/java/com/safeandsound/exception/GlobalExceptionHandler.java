@@ -93,4 +93,13 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.PAYLOAD_TOO_LARGE)
                 .body("El archivo supera el tamaño máximo permitido de 50 MB");
     }
+
+    @ExceptionHandler(ProyectoDebeTenerOwnerException.class)
+    public ResponseEntity<String> handleProyectoDebeTenerOwner(
+            ProyectoDebeTenerOwnerException exception
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(exception.getMessage());
+    }
 }
