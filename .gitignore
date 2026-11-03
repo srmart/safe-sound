@@ -52,3 +52,12 @@ application-local.properties
 /archivo_viewer.pdf
 /backend/prueba_archivos.pdf
 /backend/archivo_descargado.pdf
+
+# Logs y archivos de diagnóstico
+*.log
+*diagnostico*.txt
+*diagnostic*.txt
+
+# Heap dumps y archivos de profiling
+*.hprof
+*.hprof.hwcache/
