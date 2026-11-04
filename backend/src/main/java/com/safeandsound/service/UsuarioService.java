@@ -14,6 +14,8 @@ import com.safeandsound.dto.ActualizarPerfilRequest;
 import com.safeandsound.dto.ActualizarPreferenciasRequest;
 import java.util.Arrays;
 import java.util.regex.Pattern;
+import com.safeandsound.model.ControlIntentosAutenticacion.TipoIntento;
+import java.util.Locale;
 
 @Service
 public class UsuarioService {
@@ -24,16 +26,24 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordHasher passwordHasher;
+    private final ProteccionFuerzaBrutaService proteccionFuerzaBrutaService;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordHasher passwordHasher) {
+    public UsuarioService(
+            UsuarioRepository usuarioRepository,
+            PasswordHasher passwordHasher,
+            ProteccionFuerzaBrutaService proteccionFuerzaBrutaService
+    ) {
         this.usuarioRepository = usuarioRepository;
         this.passwordHasher = passwordHasher;
+        this.proteccionFuerzaBrutaService = proteccionFuerzaBrutaService;
     }
 
     public Usuario registrar(RegistroRequest request) {
         char[] password = request.getPassword();
         try {
-            String email = request.getEmail();
+            String email = request.getEmail()
+                    .trim()
+                    .toLowerCase(Locale.ROOT);
             String username = request.getUsername();
 
             if (usuarioRepository.existsByEmail(email)) {
@@ -60,20 +70,44 @@ public class UsuarioService {
 
     public Usuario login(LoginRequest request) {
         char[] password = request.getPassword();
-        try {
-            // buscar por email
-            Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
-                    .orElseThrow(CredencialesInvalidasException::new);
 
-            // match contraseña
-            if (!passwordHasher.matches(password, usuario.getPasswordHash())) {
+        String email = request.getEmail()
+                .trim()
+                .toLowerCase(Locale.ROOT);
+
+        try {
+            ProteccionFuerzaBrutaService.Resultado<Usuario> resultado =
+                    proteccionFuerzaBrutaService.ejecutar(
+                            email,
+                            TipoIntento.LOGIN,
+                            () -> {
+                                Usuario usuario = usuarioRepository
+                                        .findByEmail(email)
+                                        .orElseThrow(
+                                                CredencialesInvalidasException::new
+                                        );
+
+                                if (!passwordHasher.matches(
+                                        password,
+                                        usuario.getPasswordHash()
+                                )) {
+                                    throw new CredencialesInvalidasException();
+                                }
+
+                                return usuario;
+                            }
+                    );
+
+            if (!resultado.isExitoso()) {
                 throw new CredencialesInvalidasException();
             }
 
-            return usuario;
+            return resultado.getValor();
+
         } finally {
-            // limpia la contraseña ingresada una vez finalizada la autenticación.
-            Arrays.fill(password, '\0');
+            if (password != null) {
+                Arrays.fill(password, '\0');
+            }
         }
     }
 
@@ -109,14 +143,34 @@ public class UsuarioService {
      * Verifica la contraseña de un usuario para operaciones de alto riesgo (Reautenticación).
      * Mantiene las prácticas de seguridad de manejo de memoria con char[].
      */
-    public void verificarPassword(Long usuarioId, char[] passwordIngresada) {
-        Usuario usuario = buscarPorId(usuarioId);
+    public void verificarPassword(
+            Long usuarioId,
+            char[] passwordIngresada
+    ) {
         try {
-            if (!passwordHasher.matches(passwordIngresada, usuario.getPasswordHash())) {
+            ProteccionFuerzaBrutaService.Resultado<Boolean> resultado =
+                    proteccionFuerzaBrutaService.ejecutar(
+                            String.valueOf(usuarioId),
+                            TipoIntento.REAUTENTICACION,
+                            () -> {
+                                Usuario usuario = buscarPorId(usuarioId);
+
+                                if (!passwordHasher.matches(
+                                        passwordIngresada,
+                                        usuario.getPasswordHash()
+                                )) {
+                                    throw new CredencialesInvalidasException();
+                                }
+
+                                return true;
+                            }
+                    );
+
+            if (!resultado.isExitoso()) {
                 throw new CredencialesInvalidasException();
             }
+
         } finally {
-            // Limpia la contraseña ingresada de la memoria inmediatamente después de usarla
             if (passwordIngresada != null) {
                 Arrays.fill(passwordIngresada, '\0');
             }

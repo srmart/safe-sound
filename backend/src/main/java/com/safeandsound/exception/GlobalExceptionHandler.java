@@ -8,6 +8,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import com.safeandsound.exception.LimiteIntentosExcedidoException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -102,4 +105,24 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(exception.getMessage());
     }
+
+
+    @ExceptionHandler(LimiteIntentosExcedidoException.class)
+    public ResponseEntity<String> handleLimiteIntentos(
+            LimiteIntentosExcedidoException exception
+    ) {
+        long segundos = Math.max(
+                1,
+                Duration.between(
+                        Instant.now(),
+                        exception.getBloqueadoHasta()
+                ).getSeconds()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(segundos))
+                .body("Demasiados intentos. Intente nuevamente más tarde.");
+    }
+
 }

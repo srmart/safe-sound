@@ -195,3 +195,25 @@ CREATE INDEX IF NOT EXISTS idx_solicitudes_restauracion_proyecto_estado
 
 CREATE INDEX IF NOT EXISTS idx_solicitudes_restauracion_archivo
     ON solicitudes_restauracion (archivo_id);
+
+
+CREATE TABLE IF NOT EXISTS control_intentos_autenticacion (
+    id BIGSERIAL PRIMARY KEY,
+    identificador VARCHAR(255) NOT NULL,
+    tipo VARCHAR(30) NOT NULL,
+    intentos_fallidos INTEGER NOT NULL DEFAULT 0,
+    bloqueado_hasta TIMESTAMP WITH TIME ZONE,
+    ultimo_intento TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_control_intentos_identificador_tipo
+        UNIQUE (identificador, tipo),
+
+    CONSTRAINT chk_control_intentos_tipo
+        CHECK (tipo IN ('LOGIN', 'REAUTENTICACION')),
+
+    CONSTRAINT chk_control_intentos_fallidos
+        CHECK (intentos_fallidos >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_control_intentos_bloqueo
+ON control_intentos_autenticacion (bloqueado_hasta);
