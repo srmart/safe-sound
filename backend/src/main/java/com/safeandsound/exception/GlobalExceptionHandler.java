@@ -75,7 +75,8 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(exception.getMessage());
+                // SS-76: no exponer pertenencia, roles ni motivos internos.
+                .body("Acceso denegado");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

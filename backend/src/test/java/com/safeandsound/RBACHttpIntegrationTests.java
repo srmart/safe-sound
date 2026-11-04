@@ -7,11 +7,13 @@ import com.safeandsound.model.Rol;
 import com.safeandsound.model.Usuario;
 import com.safeandsound.repository.ProyectoMiembroRepository;
 import com.safeandsound.repository.ProyectoRepository;
-import com.safeandsound.repository.UsuarioRepository;
 import com.safeandsound.security.JwtService;
 import com.safeandsound.security.PasswordHasher;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -28,12 +30,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class RBACHttpIntegrationTests {
+class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
     private static final String PASSWORD_TEST = "PasswordTest!2026";
 
@@ -42,9 +45,6 @@ class RBACHttpIntegrationTests {
 
     @Autowired
     private JwtService jwtService;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
 
     @Autowired
     private ProyectoRepository proyectoRepository;
@@ -65,7 +65,7 @@ class RBACHttpIntegrationTests {
                 passwordHasher.hash(PASSWORD_TEST.toCharArray())
         );
 
-        return usuarioRepository.saveAndFlush(usuario);
+        return guardarUsuarioConfirmado(usuario);
     }
 
     private Proyecto crearProyecto(Usuario propietario) {
@@ -85,6 +85,30 @@ class RBACHttpIntegrationTests {
         miembro.setRol(rol);
 
         proyectoMiembroRepository.saveAndFlush(miembro);
+    }
+
+    // SS-76: la misma operación denegada devuelve el mismo cuerpo para externos y miembros.
+    @ParameterizedTest
+    @NullSource
+    @EnumSource(value = Rol.class, names = {"COLLABORATOR", "VIEWER"})
+    void denegacionNoRevelaPertenenciaNiRol(Rol rol) throws Exception {
+        Usuario owner = crearUsuario("owner");
+        Usuario solicitante = crearUsuario("solicitante");
+        Proyecto proyecto = crearProyecto(owner);
+        asignarRol(proyecto, owner, Rol.OWNER);
+        if (rol != null) {
+            asignarRol(proyecto, solicitante, rol);
+        }
+
+        mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
+                        .header("Authorization", "Bearer " + jwtService.generateAccessToken(solicitante))
+                        .param("nombre", "Cambio no autorizado")
+                        .param("passwordConfirmacion", PASSWORD_TEST))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string("Acceso denegado"));
+
+        assertEquals("Proyecto RBAC", proyectoRepository.findById(proyecto.getId())
+                .orElseThrow().getNombre());
     }
 
     @Test

@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class BackendSecurityAdditionalTests {
+class BackendSecurityAdditionalTests extends UsuariosConfirmadosIntegrationSupport {
     @Autowired MockMvc mockMvc;
     @Autowired JwtService jwtService;
     @Autowired UsuarioRepository usuarioRepository;
@@ -34,7 +34,7 @@ class BackendSecurityAdditionalTests {
         u.setUsername("sec_" + id);
         u.setEmail("sec_" + id + "@test.com");
         u.setPasswordHash("hash-de-prueba");
-        return usuarioRepository.saveAndFlush(u);
+        return guardarUsuarioConfirmado(u);
     }
 
     @Test void sinTokenDevuelve401() throws Exception {
