@@ -17,6 +17,7 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,8 +103,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + jwtService.generateAccessToken(solicitante))
-                        .param("nombre", "Cambio no autorizado")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Cambio no autorizado", PASSWORD_TEST)))
                 .andExpect(status().isForbidden())
                 .andExpect(content().string("Acceso denegado"));
 
@@ -125,8 +126,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Proyecto actualizado")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Proyecto actualizado", PASSWORD_TEST)))
                 .andExpect(status().isOk());
 
         assertEquals(
@@ -154,8 +155,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Cambio no autorizado")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Cambio no autorizado", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
     }
 
@@ -176,8 +177,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Cambio no autorizado")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Cambio no autorizado", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
     }
 
@@ -197,8 +198,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Cambio no autorizado")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Cambio no autorizado", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
     }
 
@@ -215,10 +216,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(put("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Cambio no autorizado")
-                        .param("usuarioId", owner.getId().toString())
-                        .param("rol", "OWNER")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"nombre\":\"%s\",\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Cambio no autorizado", "OWNER", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
     }
 
@@ -232,7 +231,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(delete("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"passwordConfirmacion\":\"%s\"}", PASSWORD_TEST)))
                 .andExpect(status().isNoContent());
 
         assertFalse(
@@ -255,7 +255,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(delete("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"passwordConfirmacion\":\"%s\"}", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -278,7 +279,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(delete("/proyectos/{id}", proyecto.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"passwordConfirmacion\":\"%s\"}", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -303,8 +305,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
                         proyecto.getId(), nuevo.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "VIEWER")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "VIEWER", PASSWORD_TEST)))
                 .andExpect(status().isCreated());
 
         assertTrue(
@@ -331,8 +333,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
                         proyecto.getId(), nuevo.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "VIEWER")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "VIEWER", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         assertFalse(
@@ -359,8 +361,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
                         proyecto.getId(), nuevo.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "VIEWER")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "VIEWER", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         assertFalse(
@@ -386,8 +388,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
                         proyecto.getId(), miembro.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "COLLABORATOR")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "COLLABORATOR", PASSWORD_TEST)))
                 .andExpect(status().isNoContent());
 
         assertTrue(
@@ -415,8 +417,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
                         proyecto.getId(), miembro.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "OWNER")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "OWNER", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -444,8 +446,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
                         proyecto.getId(), miembro.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "OWNER")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "OWNER", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         assertTrue(
@@ -547,8 +549,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
         mockMvc.perform(put("/proyectos/{id}", proyectoB.getId())
                         .header("Authorization", "Bearer " + token)
-                        .param("nombre", "Proyecto comprometido")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Proyecto comprometido", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         Proyecto proyectoSinCambios = proyectoRepository
@@ -579,8 +581,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
                         proyecto.getId(), nuevo.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "OWNER")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "OWNER", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         assertFalse(
@@ -612,8 +614,8 @@ class RBACHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
                         proyectoB.getId(), miembroB.getId()
                 )
                         .header("Authorization", "Bearer " + token)
-                        .param("rol", "COLLABORATOR")
-                        .param("passwordConfirmacion", PASSWORD_TEST))
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "COLLABORATOR", PASSWORD_TEST)))
                 .andExpect(status().isForbidden());
 
         assertTrue(

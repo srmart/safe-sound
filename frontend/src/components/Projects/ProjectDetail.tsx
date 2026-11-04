@@ -36,7 +36,7 @@ export function ProjectDetail() {
 
   const [showReauthModal, setShowReauthModal] = useState(false)
   const [reauthPassword, setReauthPassword] = useState('')
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)
+  const [pendingAction, setPendingAction] = useState<((password: string) => void) | null>(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const getRoleLabel = (role: RolProyecto) => {
@@ -109,7 +109,7 @@ export function ProjectDetail() {
   }
 
   // Solicitar contraseña antes de una operación administrativa.
-  function solicitarReautenticacion(accion: () => void) {
+  function solicitarReautenticacion(accion: (password: string) => void) {
     setPendingAction(() => accion)
     setShowReauthModal(true)
     setReauthPassword('')
@@ -131,7 +131,7 @@ export function ProjectDetail() {
     })
         .then((response) => {
           if (response.ok) {
-            pendingAction()
+            pendingAction(reauthPassword)
             setShowReauthModal(false)
           } else {
             alert('Contraseña incorrecta. Operación cancelada.')
@@ -143,7 +143,7 @@ export function ProjectDetail() {
         })
   }
 
-  // Modificar nombre y descripción del proyecto.
+  // Modificar nombre y descripci?n del proyecto.
   function handleSaveEdit(
       _id: string,
       name: string,
@@ -153,26 +153,20 @@ export function ProjectDetail() {
 
     setShowEditModal(false)
 
-    solicitarReautenticacion(() => {
-      const url = new URL(
-          `http://localhost:8080/proyectos/${project.id}`
-      )
-
-      url.searchParams.append('nombre', name)
-
-      if (description) {
-        url.searchParams.append('descripcion', description)
-      }
-
-      url.searchParams.append('passwordConfirmacion', reauthPassword)
-
+    solicitarReautenticacion((passwordConfirmacion) => {
       const token = getAccessToken()
 
-      fetch(url.toString(), {
+      fetch(`http://localhost:8080/proyectos/${project.id}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          nombre: name,
+          descripcion: description,
+          passwordConfirmacion,
+        }),
       })
           .then((response) => {
             if (response.ok) {
@@ -197,24 +191,20 @@ export function ProjectDetail() {
 
   // Archivar proyecto.
   function handleArchive() {
-    if (!project || !window.confirm('¿Querés archivar este proyecto?')) {
+    if (!project || !window.confirm('?Quer?s archivar este proyecto?')) {
       return
     }
 
-    solicitarReautenticacion(() => {
-      const url = new URL(
-          `http://localhost:8080/proyectos/${project.id}`
-      )
-
-      url.searchParams.append('passwordConfirmacion', reauthPassword)
-
+    solicitarReautenticacion((passwordConfirmacion) => {
       const token = getAccessToken()
 
-      fetch(url.toString(), {
+      fetch(`http://localhost:8080/proyectos/${project.id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ passwordConfirmacion }),
       })
           .then((response) => {
             if (response.ok) {

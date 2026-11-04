@@ -66,12 +66,21 @@ export function ProjectList() {
   useEffect(() => { void fetchProjects() }, [fetchProjects])
 
   async function handleArchive(projectId: string) {
-    if (!window.confirm('¿Querés archivar este proyecto?')) return
+    if (!window.confirm('?Quer?s archivar este proyecto?')) return
+
+    const passwordConfirmacion = window.prompt(
+      'Ingres? tu contrase?a para confirmar el archivado:'
+    )
+
+    if (!passwordConfirmacion) return
+
     try {
-      await proyectosApi.archivar(projectId)
+      await proyectosApi.archivar(projectId, passwordConfirmacion)
       await fetchProjects()
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'No se pudo archivar el proyecto.')
+      window.alert(
+        err instanceof Error ? err.message : 'No se pudo archivar el proyecto.'
+      )
     }
   }
 

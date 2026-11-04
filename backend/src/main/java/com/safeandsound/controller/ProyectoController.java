@@ -1,6 +1,10 @@
 
 package com.safeandsound.controller;
 
+import com.safeandsound.dto.ConfirmarPasswordRequest;
+import com.safeandsound.dto.ModificarMiembroRequest;
+import com.safeandsound.dto.ModificarProyectoRequest;
+import jakarta.validation.Valid;
 import com.safeandsound.dto.AuditoriaResponse;
 import com.safeandsound.dto.ProyectoListadoDTO;
 import com.safeandsound.dto.ProyectoResponse;
@@ -78,102 +82,113 @@ public class ProyectoController {
     @PutMapping("/{proyectoId}")
     public ResponseEntity<ProyectoResponse> modificarProyecto(
             @PathVariable Long proyectoId,
-            @RequestParam(required = false) String nombre,
-            @RequestParam(required = false) String descripcion,
-            @RequestParam String passwordConfirmacion,
+            @Valid @RequestBody ModificarProyectoRequest request,
             Authentication authentication
     ) {
-        Long usuarioId = (Long) authentication.getPrincipal();
+        try {
+            Long usuarioId = (Long) authentication.getPrincipal();
 
-        // RS16: Debe enviarse al menos un campo para modificar.
-        if (nombre == null && descripcion == null) {
-            return ResponseEntity.badRequest().build();
-        }
+            String nombre = request.getNombre();
+            String descripcion = request.getDescripcion();
 
-        // RS19: Reautenticación antes de modificar el proyecto.
-        usuarioService.verificarPassword(
-                usuarioId,
-                passwordConfirmacion.toCharArray()
-        );
+            // RS16: Debe enviarse al menos un campo para modificar.
+            if (nombre == null && descripcion == null) {
+                return ResponseEntity.badRequest().build();
+            }
 
-        // RS16: Autorización diferenciada por campo.
-        if (nombre != null) {
-            autorizacionService.verificarPermiso(
+            // RS19: Reautenticación antes de modificar el proyecto.
+            usuarioService.verificarPassword(
+                    usuarioId,
+                    request.getPasswordConfirmacion()
+            );
+
+            // RS16: Autorización diferenciada por campo.
+            if (nombre != null) {
+                autorizacionService.verificarPermiso(
+                        usuarioId,
+                        proyectoId,
+                        Operacion.MODIFICAR_NOMBRE_PROYECTO
+                );
+            }
+
+            if (descripcion != null) {
+                autorizacionService.verificarPermiso(
+                        usuarioId,
+                        proyectoId,
+                        Operacion.MODIFICAR_DESCRIPCION_PROYECTO
+                );
+            }
+
+            // RS13: El servicio verifica que el proyecto esté activo.
+            Proyecto proyecto = proyectoService.modificarProyecto(
+                    proyectoId,
+                    nombre,
+                    descripcion
+            );
+
+            // RS19: Registrar únicamente los campos modificados.
+            String detalles = "";
+
+            if (nombre != null) {
+                detalles += "Nombre modificado: " + nombre + ". ";
+            }
+
+            if (descripcion != null) {
+                detalles += "Descripción modificada: " + descripcion;
+            }
+
+            auditService.registrarAccionAdministrativa(
                     usuarioId,
                     proyectoId,
-                    Operacion.MODIFICAR_NOMBRE_PROYECTO
+                    "MODIFICAR_PROYECTO",
+                    detalles
             );
+
+            return ResponseEntity.ok(ProyectoResponse.desde(proyecto));
+
+        } finally {
+            request.clearPassword();
         }
-
-        if (descripcion != null) {
-            autorizacionService.verificarPermiso(
-                    usuarioId,
-                    proyectoId,
-                    Operacion.MODIFICAR_DESCRIPCION_PROYECTO
-            );
-        }
-
-        // RS13: El servicio verifica que el proyecto esté activo.
-        Proyecto proyecto = proyectoService.modificarProyecto(
-                proyectoId,
-                nombre,
-                descripcion
-        );
-
-        // RS19: Registrar únicamente los campos modificados.
-        String detalles = "";
-
-        if (nombre != null) {
-            detalles += "Nombre modificado: " + nombre + ". ";
-        }
-
-        if (descripcion != null) {
-            detalles += "Descripción modificada: " + descripcion;
-        }
-
-        auditService.registrarAccionAdministrativa(
-                usuarioId,
-                proyectoId,
-                "MODIFICAR_PROYECTO",
-                detalles
-        );
-
-        return ResponseEntity.ok(ProyectoResponse.desde(proyecto));
     }
 
     @DeleteMapping("/{proyectoId}")
     public ResponseEntity<Void> archivarProyecto(
             @PathVariable Long proyectoId,
-            @RequestParam String passwordConfirmacion,
+            @Valid @RequestBody ConfirmarPasswordRequest request,
             Authentication authentication
     ) {
-        Long usuarioId = (Long) authentication.getPrincipal();
+        try {
+            Long usuarioId = (Long) authentication.getPrincipal();
 
-        // RS19: Reautenticación.
-        usuarioService.verificarPassword(
-                usuarioId,
-                passwordConfirmacion.toCharArray()
-        );
+            // RS19: Reautenticación.
+            usuarioService.verificarPassword(
+                    usuarioId,
+                    request.getPasswordConfirmacion()
+            );
 
-        // Verificar permiso para archivar.
-        autorizacionService.verificarPermiso(
-                usuarioId,
-                proyectoId,
-                Operacion.ARCHIVAR_PROYECTO
-        );
+            // Verificar permiso para archivar.
+            autorizacionService.verificarPermiso(
+                    usuarioId,
+                    proyectoId,
+                    Operacion.ARCHIVAR_PROYECTO
+            );
 
-        // RS13: Archivar el proyecto.
-        proyectoService.archivarProyecto(proyectoId);
+            // RS13: Archivar el proyecto.
+            proyectoService.archivarProyecto(proyectoId);
 
-        // RS19: Registrar la operación en auditoría.
-        auditService.registrarAccionAdministrativa(
-                usuarioId,
-                proyectoId,
-                "ARCHIVAR_PROYECTO",
-                "Proyecto archivado"
-        );
+            // RS19: Registrar la operación en auditoría.
+            auditService.registrarAccionAdministrativa(
+                    usuarioId,
+                    proyectoId,
+                    "ARCHIVAR_PROYECTO",
+                    "Proyecto archivado"
+            );
 
-        return ResponseEntity.noContent().build();
+            return ResponseEntity.noContent().build();
+
+        } finally {
+            request.clearPassword();
+        }
     }
 
 
@@ -205,36 +220,42 @@ public class ProyectoController {
     public ResponseEntity<Void> agregarMiembro(
             @PathVariable Long proyectoId,
             @PathVariable Long usuarioId,
-            @RequestParam Rol rol,
-            @RequestParam String passwordConfirmacion,
+            @Valid @RequestBody ModificarMiembroRequest request,
             Authentication authentication
     ) {
-        Long usuarioActualId = (Long) authentication.getPrincipal();
+        try {
+            Long usuarioActualId = (Long) authentication.getPrincipal();
 
-        // RS19: Reautenticación.
-        usuarioService.verificarPassword(
-                usuarioActualId,
-                passwordConfirmacion.toCharArray()
-        );
+            Rol rol = request.getRol();
 
-        // Verificar permisos administrativos.
-        autorizacionService.verificarPermiso(
-                usuarioActualId,
-                proyectoId,
-                Operacion.MODIFICAR_ROLES
-        );
+            // RS19: Reautenticación.
+            usuarioService.verificarPassword(
+                    usuarioActualId,
+                    request.getPasswordConfirmacion()
+            );
 
-        proyectoService.agregarMiembro(proyectoId, usuarioId, rol);
+            // Verificar permisos administrativos.
+            autorizacionService.verificarPermiso(
+                    usuarioActualId,
+                    proyectoId,
+                    Operacion.MODIFICAR_ROLES
+            );
 
-        // RS19: Auditoría.
-        auditService.registrarAccionAdministrativa(
-                usuarioActualId,
-                proyectoId,
-                "AGREGAR_MIEMBRO",
-                "Usuario ID: " + usuarioId + ", Rol asignado: " + rol
-        );
+            proyectoService.agregarMiembro(proyectoId, usuarioId, rol);
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+            // RS19: Auditoría.
+            auditService.registrarAccionAdministrativa(
+                    usuarioActualId,
+                    proyectoId,
+                    "AGREGAR_MIEMBRO",
+                    "Usuario ID: " + usuarioId + ", Rol asignado: " + rol
+            );
+
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+
+        } finally {
+            request.clearPassword();
+        }
     }
 
     @GetMapping("/{proyectoId}/auditoria")
@@ -296,36 +317,42 @@ public class ProyectoController {
     public ResponseEntity<Void> modificarRol(
             @PathVariable Long proyectoId,
             @PathVariable Long usuarioId,
-            @RequestParam Rol rol,
-            @RequestParam String passwordConfirmacion,
+            @Valid @RequestBody ModificarMiembroRequest request,
             Authentication authentication
     ) {
-        Long usuarioActualId = (Long) authentication.getPrincipal();
+        try {
+            Long usuarioActualId = (Long) authentication.getPrincipal();
 
-        // RS19: Reautenticación antes de modificar roles.
-        usuarioService.verificarPassword(
-                usuarioActualId,
-                passwordConfirmacion.toCharArray()
-        );
+            Rol rol = request.getRol();
 
-        // Solo el OWNER puede modificar roles.
-        autorizacionService.verificarPermiso(
-                usuarioActualId,
-                proyectoId,
-                Operacion.MODIFICAR_ROLES
-        );
+            // RS19: Reautenticación antes de modificar roles.
+            usuarioService.verificarPassword(
+                    usuarioActualId,
+                    request.getPasswordConfirmacion()
+            );
 
-        proyectoService.modificarRol(proyectoId, usuarioId, rol);
+            // Solo el OWNER puede modificar roles.
+            autorizacionService.verificarPermiso(
+                    usuarioActualId,
+                    proyectoId,
+                    Operacion.MODIFICAR_ROLES
+            );
 
-        // RS19: Registrar la operación administrativa.
-        auditService.registrarAccionAdministrativa(
-                usuarioActualId,
-                proyectoId,
-                "MODIFICAR_ROL",
-                "Usuario ID: " + usuarioId + ", nuevo rol: " + rol
-        );
+            proyectoService.modificarRol(proyectoId, usuarioId, rol);
 
-        return ResponseEntity.noContent().build();
+            // RS19: Registrar la operación administrativa.
+            auditService.registrarAccionAdministrativa(
+                    usuarioActualId,
+                    proyectoId,
+                    "MODIFICAR_ROL",
+                    "Usuario ID: " + usuarioId + ", nuevo rol: " + rol
+            );
+
+            return ResponseEntity.noContent().build();
+
+        } finally {
+            request.clearPassword();
+        }
     }
 
 }

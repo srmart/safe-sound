@@ -1,6 +1,9 @@
 
 package com.safeandsound;
 
+import com.safeandsound.dto.ModificarProyectoRequest;
+import com.safeandsound.dto.ModificarMiembroRequest;
+import com.safeandsound.dto.ConfirmarPasswordRequest;
 import com.safeandsound.controller.ProyectoController;
 import com.safeandsound.model.Operacion;
 import com.safeandsound.model.Proyecto;
@@ -140,10 +143,7 @@ class CrossTenantAccessTests {
         assertThrows(
                 AccessDeniedException.class,
                 () -> proyectoController.modificarProyecto(
-                        proyectoAjenoId,
-                        "Nombre manipulado",
-                        "Descripción manipulada",
-                        "password-de-prueba",
+                        proyectoAjenoId, crearModificarProyectoRequest(),
                         authentication
                 )
         );
@@ -192,9 +192,7 @@ class CrossTenantAccessTests {
                 AccessDeniedException.class,
                 () -> proyectoController.agregarMiembro(
                         proyectoAjenoId,
-                        nuevoUsuarioId,
-                        Rol.VIEWER,
-                        "password-de-prueba",
+                        nuevoUsuarioId, crearModificarMiembroRequest(Rol.VIEWER),
                         authentication
                 )
         );
@@ -238,9 +236,7 @@ class CrossTenantAccessTests {
                 AccessDeniedException.class,
                 () -> proyectoController.modificarRol(
                         proyectoAjenoId,
-                        usuarioObjetivoId,
-                        Rol.COLLABORATOR,
-                        "password-de-prueba",
+                        usuarioObjetivoId, crearModificarMiembroRequest(Rol.COLLABORATOR),
                         authentication
                 )
         );
@@ -282,8 +278,7 @@ class CrossTenantAccessTests {
         assertThrows(
                 AccessDeniedException.class,
                 () -> proyectoController.archivarProyecto(
-                        proyectoAjenoId,
-                        "password-de-prueba",
+                        proyectoAjenoId, crearConfirmarPasswordRequest(),
                         authentication
                 )
         );
@@ -297,4 +292,26 @@ class CrossTenantAccessTests {
         verify(proyectoService, never())
                 .archivarProyecto(proyectoAjenoId);
     }
+
+    private static ModificarProyectoRequest crearModificarProyectoRequest() {
+        ModificarProyectoRequest request = new ModificarProyectoRequest();
+        request.setNombre("Nombre manipulado");
+        request.setDescripcion("Descripcion manipulada");
+        request.setPasswordConfirmacion("password-de-prueba".toCharArray());
+        return request;
+    }
+
+    private static ModificarMiembroRequest crearModificarMiembroRequest(Rol rol) {
+        ModificarMiembroRequest request = new ModificarMiembroRequest();
+        request.setRol(rol);
+        request.setPasswordConfirmacion("password-de-prueba".toCharArray());
+        return request;
+    }
+
+    private static ConfirmarPasswordRequest crearConfirmarPasswordRequest() {
+        ConfirmarPasswordRequest request = new ConfirmarPasswordRequest();
+        request.setPasswordConfirmacion("password-de-prueba".toCharArray());
+        return request;
+    }
+
 }

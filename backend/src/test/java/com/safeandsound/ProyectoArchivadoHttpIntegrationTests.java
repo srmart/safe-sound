@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -213,15 +214,15 @@ class ProyectoArchivadoHttpIntegrationTests {
 
         mockMvc.perform(put("/proyectos/{proyectoId}",
                         e.proyecto().getId())
-                        .param("nombre", "Nombre modificado")
-                        .param("passwordConfirmacion", PASSWORD)
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Nombre modificado", PASSWORD))
                         .header("Authorization", "Bearer " + e.ownerToken()))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(put("/proyectos/{proyectoId}",
                         e.proyecto().getId())
-                        .param("descripcion", "Descripcion modificada")
-                        .param("passwordConfirmacion", PASSWORD)
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"descripcion\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Descripcion modificada", PASSWORD))
                         .header("Authorization", "Bearer " + e.ownerToken()))
                 .andExpect(status().isForbidden());
 
@@ -247,8 +248,8 @@ class ProyectoArchivadoHttpIntegrationTests {
                         "/proyectos/{proyectoId}/miembros/{usuarioId}",
                         e.proyecto().getId(),
                         e.nuevo().getId())
-                        .param("rol", "VIEWER")
-                        .param("passwordConfirmacion", PASSWORD)
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "VIEWER", PASSWORD))
                         .header("Authorization", "Bearer " + e.ownerToken()))
                 .andExpect(status().isForbidden());
 
@@ -256,8 +257,8 @@ class ProyectoArchivadoHttpIntegrationTests {
                         "/proyectos/{proyectoId}/miembros/{usuarioId}/rol",
                         e.proyecto().getId(),
                         e.collaborator().getId())
-                        .param("rol", "VIEWER")
-                        .param("passwordConfirmacion", PASSWORD)
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"rol\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "VIEWER", PASSWORD))
                         .header("Authorization", "Bearer " + e.ownerToken()))
                 .andExpect(status().isForbidden());
 
@@ -330,7 +331,8 @@ class ProyectoArchivadoHttpIntegrationTests {
 
         mockMvc.perform(delete("/proyectos/{proyectoId}",
                         e.proyecto().getId())
-                        .param("passwordConfirmacion", PASSWORD)
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"passwordConfirmacion\":\"%s\"}", PASSWORD))
                         .header("Authorization", "Bearer " + e.ownerToken()))
                 .andExpect(status().isForbidden());
 
@@ -349,8 +351,8 @@ class ProyectoArchivadoHttpIntegrationTests {
 
         mockMvc.perform(put("/proyectos/{proyectoId}",
                         e.proyecto().getId())
-                        .param("descripcion", "Descripcion actualizada")
-                        .param("passwordConfirmacion", PASSWORD)
+.contentType(MediaType.APPLICATION_JSON)
+                        .content(String.format("{\"descripcion\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Descripcion actualizada", PASSWORD))
                         .header("Authorization", "Bearer " + e.ownerToken()))
                 .andExpect(status().isOk());
 

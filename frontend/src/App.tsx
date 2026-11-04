@@ -1,6 +1,6 @@
-
+﻿
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
@@ -21,7 +21,7 @@ function App() {
         // Modo claro por defecto.
         document.documentElement.dataset.theme = 'light'
 
-        // Si no hay sesión activa, mantener el modo claro.
+        // Si no hay sesiÃ³n activa, mantener el modo claro.
         if (!getAccessToken()) {
             return
         }
@@ -61,13 +61,13 @@ function App() {
                     element={<RegisterPage />}
                 />
 
-                {/* Inicio de sesión */}
+                {/* Inicio de sesiÃ³n */}
                 <Route
                     path="/login"
                     element={<LoginPage />}
                 />
 
-                {/* Página de bienvenida pública */}
+                {/* PÃ¡gina de bienvenida pÃºblica */}
                 <Route
                     path="/"
                     element={<LandingPage />}
@@ -93,7 +93,7 @@ function App() {
                     }
                 />
 
-                {/* Página principal */}
+                {/* PÃ¡gina principal */}
                 <Route
                     path="/home"
                     element={

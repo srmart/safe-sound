@@ -71,16 +71,40 @@ export const proyectosApi = {
   },
 
   // 4. Modificar proyecto (RF4)
-  modificar: async (proyectoId: string, nombre: string, descripcion: string) => {
-    const url = `${API_URL}/proyectos/${proyectoId}?nombre=${encodeURIComponent(nombre)}&descripcion=${encodeURIComponent(descripcion)}`;
-    const response = await fetch(url, { method: 'PUT', headers: getHeaders() });
+  modificar: async (
+    proyectoId: string,
+    nombre: string,
+    descripcion: string,
+    passwordConfirmacion: string
+  ) => {
+    const response = await fetch(`${API_URL}/proyectos/${proyectoId}`, {
+      method: 'PUT',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        nombre,
+        descripcion,
+        passwordConfirmacion,
+      }),
+    });
+
     if (!response.ok) await handleApiError(response, 'modificar el proyecto');
     return response.json();
   },
 
-  // 5. Archivar proyecto (Baja lógica - RF4)
-  archivar: async (proyectoId: string) => {
-    const response = await fetch(`${API_URL}/proyectos/${proyectoId}`, { method: 'DELETE', headers: getHeaders() });
+  // 5. Archivar proyecto (Baja l?gica - RF4)
+  archivar: async (proyectoId: string, passwordConfirmacion: string) => {
+    const response = await fetch(`${API_URL}/proyectos/${proyectoId}`, {
+      method: 'DELETE',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ passwordConfirmacion }),
+    });
+
     if (!response.ok) await handleApiError(response, 'archivar el proyecto');
     return true;
   },

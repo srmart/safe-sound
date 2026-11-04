@@ -143,15 +143,10 @@ export function ProjectMembers({ projectId }: Props) {
             return
         }
 
-        const params = new URLSearchParams({
-            rol,
-            passwordConfirmacion: password,
-        })
-
         const ruta = `${baseUrl}/proyectos/${projectId}/miembros/${usuarioId.trim()}`
         const url = accion === 'agregar'
-            ? `${ruta}?${params.toString()}`
-            : `${ruta}/rol?${params.toString()}`
+            ? ruta
+            : `${ruta}/rol`
 
         setLoading(true)
 
@@ -160,7 +155,12 @@ export function ProjectMembers({ projectId }: Props) {
                 method: accion === 'agregar' ? 'POST' : 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({
+                    rol,
+                    passwordConfirmacion: password,
+                }),
             })
 
             if (!response.ok) {

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -150,8 +151,8 @@ class RS29IntegrationTests {
         mockMvc.perform(
                         put("/proyectos/{proyectoId}", proyectoId)
                                 .principal(autenticar(usuarioId))
-                                .param("nombre", "Proyecto modificado")
-                                .param("passwordConfirmacion", PASSWORD_TEST)
+.contentType(MediaType.APPLICATION_JSON)
+                                .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "Proyecto modificado", PASSWORD_TEST))
                 )
                 .andExpect(status().isForbidden());
 
@@ -188,8 +189,8 @@ class RS29IntegrationTests {
         mockMvc.perform(
                         put("/proyectos/{proyectoId}", proyectoId)
                                 .principal(autenticar(usuarioId))
-                                .param("nombre", "BandaRock")
-                                .param("passwordConfirmacion", PASSWORD_TEST)
+.contentType(MediaType.APPLICATION_JSON)
+                                .content(String.format("{\"nombre\":\"%s\",\"passwordConfirmacion\":\"%s\"}", "BandaRock", PASSWORD_TEST))
                 )
                 .andExpect(status().isOk());
 
