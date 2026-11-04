@@ -36,7 +36,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "archivos.storage.path=./target/test-storage/inc9-archivos"
 })
 @AutoConfigureMockMvc
-@Transactional
 class ProyectoArchivadoHttpIntegrationTests {
 
     private static final String PASSWORD = "PasswordTest123!";
