@@ -1,17 +1,18 @@
+
 package com.safeandsound;
 
 import com.safeandsound.model.Operacion;
+import com.safeandsound.model.Proyecto;
 import com.safeandsound.model.ProyectoMiembro;
 import com.safeandsound.model.Rol;
 import com.safeandsound.repository.ProyectoMiembroRepository;
+import com.safeandsound.repository.ProyectoRepository;
 import com.safeandsound.service.AutorizacionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import java.util.EnumSet;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,13 +22,17 @@ import static org.mockito.Mockito.when;
 class AutorizacionServiceTests {
 
     private ProyectoMiembroRepository proyectoMiembroRepository;
+    private ProyectoRepository proyectoRepository;
     private AutorizacionService autorizacionService;
 
     @BeforeEach
     void setUp() {
         proyectoMiembroRepository = mock(ProyectoMiembroRepository.class);
+        proyectoRepository = mock(ProyectoRepository.class);
+
         autorizacionService = new AutorizacionService(
-                proyectoMiembroRepository
+                proyectoMiembroRepository,
+                proyectoRepository
         );
     }
 
@@ -183,6 +188,47 @@ class AutorizacionServiceTests {
         );
     }
 
+    // =========================
+    // INC-9 / RS13 - Estado del proyecto
+    // =========================
+
+    @Test
+    void proyectoArchivadoDebeRechazarModificaciones() {
+        configurarMembresia(Rol.OWNER);
+        configurarProyecto(false);
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> autorizacionService.verificarPermiso(
+                        2L, 1L, Operacion.MODIFICAR_ROLES
+                )
+        );
+    }
+
+    @Test
+    void proyectoActivoDebePermitirModificacionesAutorizadas() {
+        configurarMembresia(Rol.OWNER);
+        configurarProyecto(true);
+
+        assertDoesNotThrow(
+                () -> autorizacionService.verificarPermiso(
+                        2L, 1L, Operacion.MODIFICAR_ROLES
+                )
+        );
+    }
+
+    @Test
+    void proyectoArchivadoDebePermitirLecturasAutorizadas() {
+        configurarMembresia(Rol.VIEWER);
+        configurarProyecto(false);
+
+        assertDoesNotThrow(
+                () -> autorizacionService.verificarPermiso(
+                        2L, 1L, Operacion.VER_PROYECTO
+                )
+        );
+    }
+
     private void configurarMembresia(Rol rol) {
         ProyectoMiembro miembro = mock(ProyectoMiembro.class);
 
@@ -191,5 +237,13 @@ class AutorizacionServiceTests {
         when(proyectoMiembroRepository
                 .findByProyectoIdAndUsuarioId(1L, 2L))
                 .thenReturn(Optional.of(miembro));
+    }
+
+    private void configurarProyecto(boolean activo) {
+        Proyecto proyecto = mock(Proyecto.class);
+
+        when(proyecto.isActivo()).thenReturn(activo);
+        when(proyectoRepository.findById(1L))
+                .thenReturn(Optional.of(proyecto));
     }
 }

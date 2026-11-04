@@ -1,9 +1,12 @@
+
 package com.safeandsound;
 
 import com.safeandsound.model.Operacion;
+import com.safeandsound.model.Proyecto;
 import com.safeandsound.model.ProyectoMiembro;
 import com.safeandsound.model.Rol;
 import com.safeandsound.repository.ProyectoMiembroRepository;
+import com.safeandsound.repository.ProyectoRepository;
 import com.safeandsound.service.AutorizacionService;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -91,8 +94,14 @@ class RBACVerificationTests {
         ProyectoMiembroRepository repository =
                 mock(ProyectoMiembroRepository.class);
 
+        ProyectoRepository proyectoRepository =
+                mock(ProyectoRepository.class);
+
         AutorizacionService autorizacionService =
-                new AutorizacionService(repository);
+                new AutorizacionService(
+                        repository,
+                        proyectoRepository
+                );
 
         ProyectoMiembro miembro = mock(ProyectoMiembro.class);
         when(miembro.getRol()).thenReturn(rol);
@@ -100,6 +109,14 @@ class RBACVerificationTests {
         when(repository.findByProyectoIdAndUsuarioId(
                 proyectoId, usuarioId
         )).thenReturn(Optional.of(miembro));
+
+        // INC-9: Simulamos un proyecto activo para evaluar
+        // exclusivamente los permisos definidos por la matriz RBAC.
+        Proyecto proyecto = mock(Proyecto.class);
+        when(proyecto.isActivo()).thenReturn(true);
+
+        when(proyectoRepository.findById(proyectoId))
+                .thenReturn(Optional.of(proyecto));
 
         if (permitido) {
             assertDoesNotThrow(() ->

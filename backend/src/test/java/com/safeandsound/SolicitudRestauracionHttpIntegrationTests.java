@@ -406,6 +406,111 @@ class SolicitudRestauracionHttpIntegrationTests extends UsuariosConfirmadosInteg
         );
     }
 
+    // INC-9: un proyecto archivado no permite solicitar
+    // la restauracion de archivos.
+    @Test
+    void proyectoArchivadoNoPermiteSolicitarRestauracion()
+            throws Exception {
+
+        Escenario e = prepararEscenario(false);
+
+        e.proyecto().setActivo(false);
+        proyectoRepository.saveAndFlush(e.proyecto());
+
+        mockMvc.perform(post(
+                        "/proyectos/{proyectoId}/archivos/{archivoId}/solicitudes-restauracion",
+                        e.proyecto().getId(),
+                        e.archivo().getId()
+                )
+                        .header("Authorization",
+                                "Bearer " + e.collaboratorToken()))
+                .andExpect(status().isForbidden());
+
+        assertTrue(
+                solicitudRepository.findByProyectoId(
+                        e.proyecto().getId()).isEmpty()
+        );
+    }
+
+    // INC-9: un OWNER no puede aprobar ni rechazar
+    // solicitudes si el proyecto esta archivado.
+    @Test
+    void proyectoArchivadoNoPermiteProcesarSolicitudes()
+            throws Exception {
+
+        Escenario e = prepararEscenario(true);
+
+        e.proyecto().setActivo(false);
+        proyectoRepository.saveAndFlush(e.proyecto());
+
+        mockMvc.perform(post(
+                        "/proyectos/{proyectoId}/solicitudes-restauracion/{solicitudId}/aprobar",
+                        e.proyecto().getId(),
+                        e.solicitud().getId()
+                )
+                        .header("Authorization",
+                                "Bearer " + e.ownerToken()))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post(
+                        "/proyectos/{proyectoId}/solicitudes-restauracion/{solicitudId}/rechazar",
+                        e.proyecto().getId(),
+                        e.solicitud().getId()
+                )
+                        .header("Authorization",
+                                "Bearer " + e.ownerToken()))
+                .andExpect(status().isForbidden());
+
+        assertEquals(
+                EstadoSolicitudRestauracion.PENDIENTE,
+                solicitudRepository.findById(
+                        e.solicitud().getId()
+                ).orElseThrow().getEstado()
+        );
+    }
+
+    // INC-9: una autorizacion JIT aprobada no permite
+    // restaurar archivos despues de archivar el proyecto.
+    @Test
+    void proyectoArchivadoBloqueaRestauracionConJitAprobado()
+            throws Exception {
+
+        Escenario e = prepararEscenario(true);
+
+        aprobar(e);
+
+        e.proyecto().setActivo(false);
+        proyectoRepository.saveAndFlush(e.proyecto());
+
+        mockMvc.perform(post(
+                        "/proyectos/{proyectoId}/solicitudes-restauracion/{solicitudId}/restaurar",
+                        e.proyecto().getId(),
+                        e.solicitud().getId()
+                )
+                        .header("Authorization",
+                                "Bearer " + e.collaboratorToken()))
+                .andExpect(status().isForbidden());
+
+        assertTrue(
+                archivoRepository.findById(
+                        e.archivo().getId()
+                ).orElseThrow().isEliminado()
+        );
+
+        SolicitudRestauracion solicitud =
+                solicitudRepository.findById(
+                        e.solicitud().getId()
+                ).orElseThrow();
+
+        assertEquals(
+                EstadoSolicitudRestauracion.APROBADA,
+                solicitud.getEstado()
+        );
+
+        assertNull(solicitud.getUsadaEn());
+    }
+
+
     @AfterEach
     void limpiarAlmacenamientoDePruebas() throws IOException {
         // Solo limpiamos el directorio dedicado a esta clase de tests.

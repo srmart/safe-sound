@@ -1,14 +1,18 @@
+
 package com.safeandsound.service;
 
+import com.safeandsound.exception.ProyectoDebeTenerOwnerException;
 import com.safeandsound.model.Proyecto;
 import com.safeandsound.model.ProyectoMiembro;
 import com.safeandsound.model.Rol;
 import com.safeandsound.model.Usuario;
 import com.safeandsound.repository.ProyectoMiembroRepository;
 import com.safeandsound.repository.ProyectoRepository;
+
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.safeandsound.exception.ProyectoDebeTenerOwnerException;
+
 import java.util.List;
 
 @Service
@@ -47,7 +51,6 @@ public class ProyectoService {
         ProyectoMiembro miembro = new ProyectoMiembro();
         miembro.setProyecto(proyectoGuardado);
         miembro.setUsuario(usuario);
-
         miembro.setRol(Rol.OWNER);
 
         proyectoMiembroRepository.save(miembro);
@@ -58,8 +61,31 @@ public class ProyectoService {
     public Proyecto obtenerProyecto(Long proyectoId) {
         return proyectoRepository.findById(proyectoId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Proyecto no encontrado")
+                        new IllegalArgumentException(
+                                "Proyecto no encontrado"
+                        )
                 );
+    }
+
+    // INC-9 / RS13:
+    // Impide escrituras en proyectos archivados.
+    // El bloqueo se mantiene durante la transacción.
+    private Proyecto obtenerProyectoActivoConBloqueo(Long proyectoId) {
+        Proyecto proyecto = proyectoRepository
+                .buscarPorIdConBloqueo(proyectoId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Proyecto no encontrado"
+                        )
+                );
+
+        if (!proyecto.isActivo()) {
+            throw new AccessDeniedException(
+                    "No se permiten modificaciones en un proyecto archivado"
+            );
+        }
+
+        return proyecto;
     }
 
     @Transactional
@@ -68,16 +94,10 @@ public class ProyectoService {
             String nombre,
             String descripcion
     ) {
-        Proyecto proyecto = obtenerProyecto(proyectoId);
+        // INC-9: Verificar estado y bloquear el proyecto.
+        Proyecto proyecto = obtenerProyectoActivoConBloqueo(proyectoId);
 
-        // RS13: No se permite modificar campos de proyectos archivados.
-        if (!proyecto.isActivo()) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "No se pueden modificar los campos de un proyecto archivado"
-            );
-        }
-
-        // RS16
+        // RS16: Modificar únicamente los campos proporcionados.
         if (nombre != null) {
             proyecto.setNombre(nombre);
         }
@@ -91,13 +111,13 @@ public class ProyectoService {
 
     @Transactional
     public void archivarProyecto(Long proyectoId) {
-        Proyecto proyecto = obtenerProyecto(proyectoId);
+        // INC-9: No permitir archivar un proyecto ya archivado.
+        Proyecto proyecto = obtenerProyectoActivoConBloqueo(proyectoId);
 
         proyecto.setActivo(false);
 
         proyectoRepository.save(proyecto);
     }
-
 
     @Transactional
     public void agregarMiembro(
@@ -105,7 +125,9 @@ public class ProyectoService {
             Long usuarioId,
             Rol rol
     ) {
-        Proyecto proyecto = obtenerProyecto(proyectoId);
+        // INC-9: No agregar miembros a proyectos archivados.
+        Proyecto proyecto = obtenerProyectoActivoConBloqueo(proyectoId);
+
         Usuario usuario = usuarioService.buscarPorId(usuarioId);
 
         if (proyectoMiembroRepository.existsByProyectoIdAndUsuarioId(
@@ -131,12 +153,10 @@ public class ProyectoService {
             Long usuarioId,
             Rol nuevoRol
     ) {
-        // Bloquear el proyecto para evitar modificaciones simultáneas
-        // de roles que puedan dejarlo sin OWNER.
-        proyectoRepository.buscarPorIdConBloqueo(proyectoId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Proyecto no encontrado")
-                );
+        // INC-9: Verificar estado y bloquear el proyecto.
+        // También evita modificaciones simultáneas que puedan
+        // dejar el proyecto sin un OWNER.
+        obtenerProyectoActivoConBloqueo(proyectoId);
 
         ProyectoMiembro miembro = proyectoMiembroRepository
                 .findByProyectoIdAndUsuarioId(proyectoId, usuarioId)
@@ -170,7 +190,7 @@ public class ProyectoService {
                 .toList();
     }
 
-    // R5 - Listado de proyectos con búsqueda y filtros
+    // R5: Listado de proyectos con búsqueda y filtros.
     @Transactional(readOnly = true)
     public List<ProyectoMiembro> listarProyectos(
             Long usuarioId,
@@ -189,9 +209,9 @@ public class ProyectoService {
     }
 
     // Obtener los miembros de un proyecto.
+    // Se permite consultar proyectos archivados.
     @Transactional(readOnly = true)
     public List<ProyectoMiembro> listarMiembros(Long proyectoId) {
         return proyectoMiembroRepository.listarMiembros(proyectoId);
     }
-
 }
