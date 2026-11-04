@@ -12,6 +12,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.safeandsound.security.JwtAuthenticationFilter;
 import com.safeandsound.security.RegistroIntentoAccesoFilter;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.DispatcherType;
 
 @Configuration
 @EnableMethodSecurity
@@ -49,6 +50,7 @@ public class SecurityConfig {
                                 "/auth/refresh",
                                 "/auth/logout"
                         ).permitAll()
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 
                         // RS19: Reautenticación solo para usuarios autenticados
                         .requestMatchers(HttpMethod.POST, "/auth/reautenticar").authenticated()
