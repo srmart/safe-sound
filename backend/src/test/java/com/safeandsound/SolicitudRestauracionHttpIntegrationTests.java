@@ -12,7 +12,6 @@ import com.safeandsound.repository.ArchivoRepository;
 import com.safeandsound.repository.ProyectoMiembroRepository;
 import com.safeandsound.repository.ProyectoRepository;
 import com.safeandsound.repository.SolicitudRestauracionRepository;
-import com.safeandsound.repository.UsuarioRepository;
 import com.safeandsound.security.JwtService;
 
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @AutoConfigureMockMvc
 @Transactional
-class SolicitudRestauracionHttpIntegrationTests {
+class SolicitudRestauracionHttpIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
     private static final Path STORAGE =
             Path.of("./target/test-storage/jit-archivos")
@@ -52,9 +51,6 @@ class SolicitudRestauracionHttpIntegrationTests {
 
     @Autowired
     private JwtService jwtService;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
 
     @Autowired
     private ProyectoRepository proyectoRepository;
@@ -76,7 +72,7 @@ class SolicitudRestauracionHttpIntegrationTests {
         usuario.setEmail(prefijo + "-" + id + "@test.com");
         usuario.setPasswordHash("hash-de-prueba");
 
-        return usuarioRepository.saveAndFlush(usuario);
+        return guardarUsuarioConfirmado(usuario);
     }
 
     private Proyecto crearProyecto(Usuario owner) {

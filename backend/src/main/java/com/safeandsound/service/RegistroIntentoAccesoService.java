@@ -17,7 +17,8 @@ public class RegistroIntentoAccesoService {
         this.intentoAccesoProtegidoRepository = intentoAccesoProtegidoRepository;
     }
 
-    @Transactional //(propagation = Propagation.REQUIRES_NEW) Se comenta para poder comprobar las pruebas sin conflicto entre transacciones paralelas. En funcionamiento normal para tener auditoria DESCOMENTAR
+    // SS-77: conservar la auditoría aunque la transacción de negocio se revierta.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void registrar(
             Long usuarioId,
             String recurso,

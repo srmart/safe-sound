@@ -6,7 +6,8 @@ import com.safeandsound.model.Operacion;
 import com.safeandsound.service.AutorizacionService;
 import com.safeandsound.service.ProyectoService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -46,15 +47,20 @@ class CrossTenantHttpTests {
                 .build();
     }
 
-    @Test
-    void accesoHttpAProyectoAjenoDebeDevolver403() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "El usuario no pertenece al proyecto",
+            "El rol VIEWER no tiene permiso para VER_PROYECTO",
+            "El rol COLLABORATOR no tiene permiso para VER_AUDITORIA",
+            "No se pudo verificar la autorización del usuario",
+            "La solicitud no pertenece a este proyecto"
+    })
+    void denegacionesHttpNoRevelanElMotivoInterno(String motivo) throws Exception {
 
         Long usuarioId = 1L;
         Long proyectoAjenoId = 2L;
 
-        doThrow(new AccessDeniedException(
-                "El usuario no pertenece al proyecto"
-        ))
+        doThrow(new AccessDeniedException(motivo))
                 .when(autorizacionService)
                 .verificarPermiso(
                         usuarioId,
@@ -74,7 +80,7 @@ class CrossTenantHttpTests {
                 )
                 .andExpect(status().isForbidden())
                 .andExpect(content().string(
-                        "El usuario no pertenece al proyecto"
+                        "Acceso denegado"
                 ));
 
         verify(autorizacionService).verificarPermiso(

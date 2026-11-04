@@ -7,7 +7,6 @@ import com.safeandsound.model.Rol;
 import com.safeandsound.model.Usuario;
 import com.safeandsound.repository.ProyectoMiembroRepository;
 import com.safeandsound.repository.ProyectoRepository;
-import com.safeandsound.repository.UsuarioRepository;
 import com.safeandsound.security.JwtService;
 
 import org.junit.jupiter.api.Test;
@@ -25,16 +24,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class RS29JwtDatabaseIntegrationTests {
+class RS29JwtDatabaseIntegrationTests extends UsuariosConfirmadosIntegrationSupport {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
     private JwtService jwtService;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
 
     @Autowired
     private ProyectoRepository proyectoRepository;
@@ -54,7 +50,7 @@ class RS29JwtDatabaseIntegrationTests {
         propietario.setUsername("owner-" + identificador);
         propietario.setPasswordHash("hash-de-prueba");
 
-        propietario = usuarioRepository.saveAndFlush(propietario);
+        propietario = guardarUsuarioConfirmado(propietario);
 
         // Crear usuario externo.
         Usuario externo = new Usuario();
@@ -62,7 +58,7 @@ class RS29JwtDatabaseIntegrationTests {
         externo.setUsername("externo-" + identificador);
         externo.setPasswordHash("hash-de-prueba");
 
-        externo = usuarioRepository.saveAndFlush(externo);
+        externo = guardarUsuarioConfirmado(externo);
 
         // Crear proyecto perteneciente al propietario.
         Proyecto proyecto = new Proyecto();
