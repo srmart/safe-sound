@@ -5,5 +5,6 @@ public enum Operacion {
     MODIFICAR_PROYECTO,
     ARCHIVAR_PROYECTO,
     VER_MIEMBROS,
-    MODIFICAR_ROLES
+    MODIFICAR_ROLES,
+    PRUEBA
 }

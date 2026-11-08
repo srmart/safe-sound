@@ -26,6 +26,24 @@ public class ProyectoController {
         this.autorizacionService = autorizacionService;
     }
 
+    @GetMapping("/prueba")
+    public String prueba(){
+        return "Esto es una prueba";
+    }
+
+
+    @GetMapping("/prueba2")
+    public String prueba2(Authentication authentication){
+
+        Long usuarioId = (Long) authentication.getPrincipal();
+        autorizacionService.verificarPermiso(
+                usuarioId,
+                2L,
+                Operacion.PRUEBA
+        );
+        return "Esto es una prueba";
+    }
+
     @PostMapping
     public ResponseEntity<Proyecto> crearProyecto(
             @RequestParam String nombre,
